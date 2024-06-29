@@ -13,12 +13,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: check chmod
-      - shell: pwsh
-      - run: |
-        New-Item -Path . -Name "script.py" -ItemType "file"
-        if ("${{ matrix.os }}" -ne "windows-2022") {
-          echo "Not on Windows"
-          chmod a+x script.py
-        } else {
-          echo "On Windows"
-        }
+        shell: pwsh
+        run: |
+          New-Item -Path . -Name "script.py" -ItemType "file"
+          if ("${{ matrix.os }}" -ne "windows-2022") {
+            echo "Not on Windows"
+            chmod a+x script.py
+          } else {
+            echo "On Windows"
+          }
