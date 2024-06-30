@@ -76,8 +76,7 @@ jobs:
           }
           Set-Location -LiteralPath ${{ github.workspace }}/build_native_root/catboost/tools
           foreach($tool in 'limited_precision_dsv_diff','limited_precision_json_diff','model_comparator') {
-            New-Item -Path $tool -ItemType Directory
-            Move-Item "${{ github.workspace }}/build_native_root/${tool}*" -Destination $tool
+            Move-Item ${{ github.workspace }}/build_native_root/${tool}
             if ("${{ inputs.runs-on_value }}" -ne "windows-2022") {
               chmod a+x $tool/$tool
             }
