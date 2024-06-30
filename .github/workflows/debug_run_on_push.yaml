@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - github_actions_debug_1
+      - github_actions_debug
 
 jobs:
   check:
@@ -22,3 +22,15 @@ jobs:
           } else {
             echo "On Windows"
           }
+
+  test:
+    name: Test per OS
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-13, windows-2022]
+      fail-fast: false
+    uses: ./.github/workflows/test.yaml
+    with:
+      runs-on_value: ${{ matrix.os }}
+      artifacts_version: f6c4a8b44ff3b87bc7ff04b88921095d26bea155
+      catboost_package_version: 1.2.5
