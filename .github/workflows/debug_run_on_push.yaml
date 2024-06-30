@@ -33,5 +33,5 @@ jobs:
     with:
       runs-on_value: ${{ matrix.os }}
       artifacts_version: f6c4a8b44ff3b87bc7ff04b88921095d26bea155
-      artifacts_run_id: 9735392546
+      artifacts_run_id: 9729389863
       catboost_package_version: 1.2.5
