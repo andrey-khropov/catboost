@@ -41,7 +41,7 @@ jobs:
         with:
           name: catboost-cli-linux-x86_64-${{ inputs.artifacts_version }}
           path: build_native_root/catboost/app/
-          github-token: ${{ secrets.GH_PAT }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ inputs.artifacts_run_id }}
 
       - if: inputs.runs-on_value == 'macos-13'
