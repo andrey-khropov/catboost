@@ -32,6 +32,7 @@ jobs:
     uses: ./.github/workflows/test.yaml
     with:
       runs-on_value: ${{ matrix.os }}
-      artifacts_version: f6c4a8b44ff3b87bc7ff04b88921095d26bea155
-      artifacts_run_id: 9729389863
+      artifacts_repository: catboost/catboost
+      artifacts_version: f739ba42da12adf1467c4980f7f6d8fc5a904d05 
+      artifacts_run_id: 9734005339
       catboost_package_version: 1.2.5
