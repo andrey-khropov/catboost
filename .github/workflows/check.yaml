@@ -1,14 +1,14 @@
 on:
   push:
     branches:
-      - master
+      - github_actions_debug
 
 jobs:
   check:
     name: Check per OS
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13, windows-2022]
+        os: [macos-13]
       fail-fast: false
     with:
       runs-on_value: ${{ matrix.os }}
