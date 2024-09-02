@@ -19,6 +19,8 @@ on:
 
 jobs:
   publish_widget:
+    if: false
+    name: Publish catboost-widget on NPM
     runs-on: ubuntu-latest
     permissions:
       contents: read
