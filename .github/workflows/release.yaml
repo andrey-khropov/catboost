@@ -15,4 +15,5 @@ jobs:
     with:
       version: ${{ inputs.version }}
       catboost_package_name: ${{ inputs.catboost_package_name }}
+      artifacts_run_id: 10658718630
     uses: ./.github/workflows/release_publish.yaml
