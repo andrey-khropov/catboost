@@ -1,4 +1,4 @@
-# Release 1.2.6-rc.0
+# Release 1.2.6-rc.1
 
 ## New features
 * User-defined metric GPU evaluation for task_type=GPU
