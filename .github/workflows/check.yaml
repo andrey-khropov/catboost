@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - github_actions_debug
+      - github_actions_debug_1
 
 jobs:
   check:

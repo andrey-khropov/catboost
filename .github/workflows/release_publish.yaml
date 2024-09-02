@@ -1,0 +1,50 @@
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: false
+        type: string
+      artifacts_run_id:
+        required: false
+        type: string
+        default: ${{ github.run_id }}
+      artifacts_repository:
+        required: false
+        type: string
+        default: ${{ github.repository }}
+      catboost_package_name:
+        required: false
+        type: string
+        default: catboost
+
+jobs:
+  publish_widget:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Env setup
+        shell: pwsh
+        run: New-Item -Path built_widget -ItemType Directory
+
+      - name: Download catboost python package visualization widget
+        uses: actions/download-artifact@v4
+        with:
+          name: catboost-python-package-widget-v${{ inputs.version }}
+          path: built_widget/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ inputs.artifacts_repository }}
+          run-id: ${{ inputs.artifacts_run_id }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Publish catboost-widget npm package
+        run: |
+          cd ${{ github.workspace }}/built_widget
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
