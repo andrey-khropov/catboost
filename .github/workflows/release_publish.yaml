@@ -117,6 +117,7 @@ jobs:
 
       - name: Publish package
         run: |
+          export GPG_TTY=$(tty)
           cd ${{ github.workspace }}/catboost/catboost/jvm-packages/common
           mvn --batch-mode clean deploy
         env:
