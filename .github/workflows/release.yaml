@@ -27,6 +27,8 @@ jobs:
 
   publish:
     name: Publish
+    needs:
+      - check
     with:
       version: ${{ inputs.version }}
       catboost_package_name: ${{ inputs.catboost_package_name }}
