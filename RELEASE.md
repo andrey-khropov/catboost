@@ -1,3 +1,31 @@
+# Release 1.2.6-rc.0
+
+## New features
+* User-defined metric GPU evaluation for task_type=GPU
+* GPU Custom objective support
+* Multiclassification is now supported in models exported as Python and C++ code. #2283
+* \[C/C++ applier\]. `APT_MULTI_PROBABILITY` prediction type is now supported. #2639. Thanks to @aivarasbaranauskas.
+* `GroupQuantile` metric
+
+## Build & testing
+* CatBoost open source build and test infrastructure has been switched to GitHub actions. It is possible to run it if you fork CatBoost repository as well. See [the announcement](https://github.com/catboost/catboost/discussions/2708) for details.
+* \[Windows\]: Visual Studio 2022 with MSVC toolset 14.29.30133 is now supported. #2302
+
+## Speedups
+* \[GPU\]: Increase block size in `QueryCrossEntropy` (~3x faster on a100 for 6m samples, 350 features, query size near 1).
+
+## Bugfixes
+* Calculate F1, Precision, and Recall for all labels in multi-label classification
+* Synchronize values of NCB::NModelEvaluation::EPredictionType and EApiPredictionType. #2643
+* Fix sign of 2nd derivative for Tweedie loss
+* Fix 'Can't find borders for feature ...' error when using text features on GPU. #2657
+* Fix indexing of tokenized text features in model saver and dataset loader when some features are ignored
+* Fix descent direction for Cox regression fix #2701
+* \[C/C++ applier\]. Add missed `PredictSpecificClassFlat` to calcer.exports. #2715
+
+* Fix exception handling in custom python callbacks used in C/C++ native code.
+
+
 # Release 1.2.5
 
 ## New features

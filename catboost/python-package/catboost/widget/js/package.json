@@ -1,6 +1,6 @@
 {
-  "name": "catboost-widget",
-  "version": "1.2.5",
+  "name": "@andrei_khropov/catboost-widget",
+  "version": "1.2.6-rc.0",
   "description": "CatBoost widget for plots in Jupyter",
   "main": "src/index.js",
   "files": [
@@ -12,7 +12,7 @@
     "clean": "rimraf dist && rimraf nbextension && rimraf labextension",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "gocd-catboost",
+  "author": "andrei_khropov",
   "license": "ISC",
   "dependencies": {
     "@jupyter-widgets/base": "^2 || ^3 || ^4 || ^5 || ^6",

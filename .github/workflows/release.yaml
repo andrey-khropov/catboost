@@ -1,0 +1,33 @@
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: false
+        type: string
+      catboost_package_name:
+        required: false
+        type: string
+        default: catboost
+
+jobs:
+  check:
+    name: Check per OS
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+      fail-fast: false
+    with:
+      runs-on_value: ${{ matrix.os }}
+      revision: v${{ inputs.version }}
+      catboost_package_name: ${{ inputs.catboost_package_name }}
+      catboost_package_version: v${{ inputs.version }}
+      artifacts_version: v${{ inputs.version }}
+      artifact_retention_days: 3
+    uses: ./.github/workflows/check_per_os.yaml
+
+  publish:
+    name: Publish
+    with:
+      version: ${{ inputs.version }}
+      catboost_package_name: ${{ inputs.catboost_package_name }}
+    uses: ./.github/workflows/release_publish.yaml
