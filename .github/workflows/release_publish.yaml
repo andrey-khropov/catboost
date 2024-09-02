@@ -47,6 +47,6 @@ jobs:
       - name: Publish catboost-widget npm package
         run: |
           cd ${{ github.workspace }}/built_widget
-          npm publish --provenance --access public
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
