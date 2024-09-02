@@ -1,0 +1,14 @@
+on:
+  workflow_dispatch
+
+jobs:
+  publish:
+    name: Publish
+    with:
+      version: 1.2.5
+      catboost_package_name: catboost_dev
+      artifacts_repository: catboost/catboost
+      artifacts_run_id: 10657461083
+      is_test_env: true
+    uses: ./.github/workflows/release_publish.yaml
+    secrets: inherit

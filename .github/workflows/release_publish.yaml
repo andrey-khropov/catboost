@@ -16,6 +16,10 @@ on:
         required: false
         type: string
         default: catboost
+      is_test_env:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   publish_widget:
@@ -52,3 +56,34 @@ jobs:
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish_python_package:
+    name: Publish Python package to PyPI
+    runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ inputs.is_test_env && 'testpypi' || 'pypi' }}
+      url: https://${{ inputs.is_test_env && 'test.pypi.org' || 'pypi.org' }}/p/${{ inputs.catboost_package_name }}
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download python package dists
+        uses: actions/download-artifact@v4
+        with:
+          pattern: catboost-python-package-dist-*
+          path: dist/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ inputs.artifacts_repository }}
+          run-id: ${{ inputs.artifacts_run_id }}
+
+      - if: ${{ ! inputs.is_test_env }}
+        name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - if: ${{ inputs.is_test_env }}
+        name: Publish distribution to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
