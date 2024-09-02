@@ -1,0 +1,18 @@
+on:
+  workflow_dispatch
+
+jobs:
+  build:
+    name: Build per OS
+    strategy:
+      matrix:
+        os: [ubuntu-latest. macos-13, windows-2022]
+      fail-fast: false
+    uses: ./.github/workflows/build.yaml
+    with:
+      runs-on_value: ${{ matrix.os }}
+      revision: v1.2.6rc0
+      catboost_package_name: catboost
+      catboost_package_version: 1.2.6rc0
+      artifacts_version: v1.2.6rc0
+      artifact_retention_days: 3
