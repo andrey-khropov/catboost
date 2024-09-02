@@ -41,11 +41,12 @@ jobs:
         with:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
+          always-auth: true
+          scope: '@andrei_khropov'
       
       - name: Publish catboost-widget npm package
         run: |
           cd ${{ github.workspace }}/built_widget
-          echo "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}" > .npmrc
           npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
