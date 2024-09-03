@@ -150,6 +150,8 @@ jobs:
 
   publish_jvm_catboost_prediction:
     name: Publish catboost-prediction package to Maven Central
+    #needs:
+    #  - publish_jvm_catboost_common
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
