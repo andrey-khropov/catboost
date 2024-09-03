@@ -369,6 +369,7 @@ jobs:
         with:
           body_path: ${{ github.workspace }}/RELEASE_changelog.md
           files: upload/*
+          name: ${{ inputs.version }}
           tag_name: v${{ inputs.version }}
           discussion_category_name: Announcements
           make_latest: ${{ inputs.make_latest }}
