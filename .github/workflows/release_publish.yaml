@@ -224,6 +224,12 @@ jobs:
             catboost/jvm-packages/tools
             catboost/catboost/spark/catboost4j-spark
 
+      - name: Generate CatBoost for Apache Spark projects
+        shell: pwsh
+        run: |
+          Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/spark/catboost4j-spark
+          python ./generate_projects/generate.py
+
       - name: Set up Maven Central Repository
         uses: actions/setup-java@v4
         with:
@@ -268,7 +274,6 @@ jobs:
           export GPG_TTY=$(tty)
           ls -lR ${{ github.workspace }}/prebuilt/spark
           cd ${{ github.workspace }}/catboost/catboost/spark/catboost4j-spark
-          python ./generate_projects/generate.py
           cd ./projects/spark_3.5_2.12
           mvn --batch-mode -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark_core_resources/ -D"prebuilt.native.sources.jar"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark-impl-sources.jar test
           #mvn --batch-mode -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/catboost4j-prediction_resources/ -DskipTests clean deploy
