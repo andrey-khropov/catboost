@@ -223,6 +223,7 @@ jobs:
           sparse-checkout: |
             catboost/jvm-packages/tools
             catboost/spark/catboost4j-spark
+            catboost/pytest/data
 
       - name: Generate CatBoost for Apache Spark projects
         shell: pwsh
