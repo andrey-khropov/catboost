@@ -6,8 +6,8 @@ import re
 
 def extract_release_changelog(all_changelog: str, dst_release_changelog: str, release_version: str):
     in_release_changelog = False
-    with open(all_changelog) as src: 
-        with open(dst_release_changelog, 'w') as dst: 
+    with open(all_changelog) as src:
+        with open(dst_release_changelog, 'w') as dst:
             for l in src:
                 if in_release_changelog:
                     if re.match('^# Release.*', l[:-1]):
@@ -28,6 +28,3 @@ if __name__ == '__main__':
     parsed_args = parser.parse_args()
 
     extract_release_changelog(**vars(parsed_args))
-
-
-    

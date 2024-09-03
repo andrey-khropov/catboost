@@ -72,14 +72,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
           always-auth: true
           scope: '@andrei_khropov'
-      
+
       - name: Publish catboost-widget npm package
         run: |
           cd ${{ github.workspace }}/built_widget
@@ -319,7 +319,7 @@ jobs:
           New-Item -Path src_artifacts -ItemType Directory
           Set-Location -LiteralPath ${{ github.workspace }}/src_artifacts
           New-Item -Path R -ItemType Directory
-          
+
       - name: Download R packages
         uses: actions/download-artifact@v4
         with:
