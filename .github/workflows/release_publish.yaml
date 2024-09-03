@@ -121,7 +121,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: catboost
-          ref: ${{ inputs.version }}
+          ref: v${{ inputs.version }}
           sparse-checkout: catboost/jvm-packages/common
 
       - name: Set up Maven Central Repository
@@ -159,7 +159,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: catboost
-          ref: ${{ inputs.version }}
+          ref: v${{ inputs.version }}
           sparse-checkout: |
             catboost/jvm-packages/catboost4j-prediction
             catboost/jvm-packages/tools
@@ -219,7 +219,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: catboost
-          ref: ${{ inputs.version }}
+          ref: v${{ inputs.version }}
           sparse-checkout: |
             catboost/jvm-packages/tools
             catboost/spark/catboost4j-spark
