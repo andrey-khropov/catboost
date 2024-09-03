@@ -222,7 +222,7 @@ jobs:
           ref: ${{ inputs.version }}
           sparse-checkout: |
             catboost/jvm-packages/tools
-            catboost/catboost/spark/catboost4j-spark
+            catboost/spark/catboost4j-spark
 
       - name: Generate CatBoost for Apache Spark projects
         shell: pwsh
