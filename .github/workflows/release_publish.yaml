@@ -223,7 +223,6 @@ jobs:
           sparse-checkout: |
             catboost/jvm-packages/tools
             catboost/spark/catboost4j-spark
-            catboost/pytest/data
 
       - name: Generate CatBoost for Apache Spark projects
         shell: pwsh
@@ -273,11 +272,8 @@ jobs:
       - name: Publish package
         run: |
           export GPG_TTY=$(tty)
-          ls -lR ${{ github.workspace }}/prebuilt/spark
           cd ${{ github.workspace }}/catboost/catboost/spark/catboost4j-spark
-          cd ./projects/spark_3.5_2.12
-          mvn --batch-mode -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark_core_resources/ -D"prebuilt.native.sources.jar"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark-impl-sources.jar test
-          #mvn --batch-mode -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/catboost4j-prediction_resources/ -DskipTests clean deploy
+          python ./mvn_deploy_all_projects.py --batch-mode -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark_core_resources/ -D"prebuilt.native.sources.jar"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark-impl-sources.jar -DskipTests
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
