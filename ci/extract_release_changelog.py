@@ -15,7 +15,6 @@ def extract_release_changelog(all_changelog: str, dst_release_changelog: str, re
                     dst.write(l)
                 elif re.match(f'^# Release {release_version}$', l[:-1]):
                     in_release_changelog = True
-                    dst.write(l)
 
     if not in_release_changelog:
         raise Exception(f'Release {release_version} has not been found in changelog')
