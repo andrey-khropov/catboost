@@ -202,3 +202,76 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+
+  publish_jvm_catboost_spark:
+    name: Publish CatBoost for Apache Spark packages to Maven Central
+    #needs:
+    #  - publish_jvm_catboost_common
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python 3.12 for running scripts
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: catboost
+          ref: ${{ inputs.version }}
+          sparse-checkout: |
+            catboost/jvm-packages/tools
+            catboost/catboost/spark/catboost4j-spark
+
+      - name: Set up Maven Central Repository
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: 'maven'
+          cache-dependency-path: |
+            catboost/catboost/spark/catboost4j-spark/projects/**/pom.xml
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE # env variable for GPG private key passphrase
+
+      - name: Env setup
+        shell: pwsh
+        run: |
+          New-Item -Path prebuilt/spark -ItemType Directory
+          New-Item -Path prebuilt/spark/catboost4j-spark_core_resources -ItemType Directory
+
+      - name: Download catboost4j-spark-impl-sources
+        uses: actions/download-artifact@v4
+        with:
+          name: catboost4j-spark-impl-sources-${{ inputs.artifacts_version }}
+          path: prebuilt/spark/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ inputs.artifacts_repository }}
+          run-id: ${{ inputs.artifacts_run_id }}
+
+      - name: Download catboost4j-spark_core_resources
+        uses: actions/download-artifact@v4
+        with:
+          pattern: catboost4j-spark_core_resources*
+          merge-multiple: true
+          path: prebuilt/spark/catboost4j-spark_core_resources/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ inputs.artifacts_repository }}
+          run-id: ${{ inputs.artifacts_run_id }}
+
+      - name: Publish package
+        run: |
+          export GPG_TTY=$(tty)
+          ls -lR ${{ github.workspace }}/prebuilt/spark
+          cd ${{ github.workspace }}/catboost/catboost/spark/catboost4j-spark
+          python ./generate_projects/generate.py
+          cd ./projects/spark_3.5_2.12
+          mvn -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark_core_resources/ -D"prebuilt.native.sources.jar"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark-impl-sources.jar test
+          #mvn --batch-mode -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/catboost4j-prediction_resources/ -DskipTests clean deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
