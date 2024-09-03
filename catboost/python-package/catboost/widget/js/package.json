@@ -1,6 +1,6 @@
 {
   "name": "@andrei_khropov/catboost-widget",
-  "version": "1.2.6-rc.2",
+  "version": "1.2.6-rc.4",
   "description": "CatBoost widget for plots in Jupyter",
   "main": "src/index.js",
   "files": [
