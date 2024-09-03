@@ -64,7 +64,7 @@ runs:
       uses: actions/download-artifact@v4
       with:
         name: catboost-${{ inputs.name }}-windows-x86_64-${{ inputs.artifacts_version }}
-        path: s${{ inputs.dst_path_prefix }}_windows-x86_64/
+        path: ${{ inputs.dst_path_prefix }}_windows-x86_64/
         github-token: ${{ inputs.github_token }}
         repository: ${{ inputs.artifacts_repository }}
         run-id: ${{ inputs.artifacts_run_id }}
