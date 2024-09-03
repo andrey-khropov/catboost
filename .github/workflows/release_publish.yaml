@@ -149,6 +149,7 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
 
   publish_jvm_catboost_prediction:
+    if: false
     name: Publish catboost-prediction package to Maven Central
     #needs:
     #  - publish_jvm_catboost_common
