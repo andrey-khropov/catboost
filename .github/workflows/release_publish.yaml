@@ -195,7 +195,7 @@ jobs:
           export GPG_TTY=$(tty)
           ls -lR ${{ github.workspace }}/prebuilt/catboost4j-prediction_resources/
           cd ${{ github.workspace }}/catboost/catboost/jvm-packages/catboost4j-prediction
-          mvn -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/catboost4j-prediction_resources/ test
+          mvn --batch-mode -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/catboost4j-prediction_resources/ test
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
