@@ -27,9 +27,8 @@ on:
         required: true
         type: string
       artifacts_run_id:
-        required: false
+        required: true
         type: string
-        default: ${{ github.run_id }}
       artifacts_repository:
         required: false
         type: string
