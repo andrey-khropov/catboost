@@ -330,6 +330,7 @@ jobs:
           artifacts_run_id: ${{ inputs.artifacts_run_id }}
           artifacts_repository: ${{ inputs.artifacts_repository }}
           dst_path_prefix: src_artifacts/bin
+        secrets: inherit
 
       - name: Download model_interface libraries
         uses: ./catboost/.github/actions/download_artifacts_for_all_platforms
@@ -339,6 +340,7 @@ jobs:
           artifacts_run_id: ${{ inputs.artifacts_run_id }}
           artifacts_repository: ${{ inputs.artifacts_repository }}
           dst_path_prefix: src_artifacts/model_interface
+        secrets: inherit
 
       - name: Prepare release artifacts
         run: |
