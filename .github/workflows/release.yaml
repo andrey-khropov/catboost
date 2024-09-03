@@ -2,19 +2,42 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        required: false
+        required: true
         type: string
       catboost_package_name:
         required: false
         type: string
         default: catboost
+      artifact_retention_days:
+        required: false
+        type: number
+        default: 90
+      is_test_env:
+        required: false
+        type: boolean
+        default: false
+      make_latest:
+        required: False
+        type: boolean
+        default: true
 
 jobs:
-  publish:
-    name: Publish
+  build_and_check:
+    name: Build and check
     with:
       version: ${{ inputs.version }}
       catboost_package_name: ${{ inputs.catboost_package_name }}
-      artifacts_run_id: 10660087575
+      artifact_retention_days: ${{ inputs.artifact_retention_days }}
+    uses: ./.github/workflows/release_build_and_check.yaml
+
+  publish:
+    name: Publish
+    needs:
+      - build_and_check
+    with:
+      version: ${{ inputs.version }}
+      catboost_package_name: ${{ inputs.catboost_package_name }}
+      is_test_env: ${{ inputs.is_test_env }}
+      make_latest: ${{ inputs.make_latest }}
     uses: ./.github/workflows/release_publish.yaml
     secrets: inherit
