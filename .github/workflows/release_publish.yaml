@@ -270,7 +270,7 @@ jobs:
           cd ${{ github.workspace }}/catboost/catboost/spark/catboost4j-spark
           python ./generate_projects/generate.py
           cd ./projects/spark_3.5_2.12
-          mvn -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark_core_resources/ -D"prebuilt.native.sources.jar"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark-impl-sources.jar test
+          mvn --batch-mode -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark_core_resources/ -D"prebuilt.native.sources.jar"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark-impl-sources.jar test
           #mvn --batch-mode -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/catboost4j-prediction_resources/ -DskipTests clean deploy
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
