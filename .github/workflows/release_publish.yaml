@@ -20,6 +20,10 @@ on:
         required: false
         type: boolean
         default: false
+      make_latest:
+        required: False
+        type: boolean
+        default: true
 
   workflow_dispatch:
     inputs:
@@ -41,6 +45,10 @@ on:
         required: false
         type: boolean
         default: false
+      make_latest:
+        required: False
+        type: boolean
+        default: true
 
 
 jobs:
@@ -348,4 +356,19 @@ jobs:
             --src-dir ${{ github.workspace }}/src_artifacts \
             --dst-dir ${{ github.workspace }}/upload \
             --release-version ${{ inputs.version }}
-          ls -lR ${{ github.workspace }}/upload
+
+      - name: Extract release changelog
+        run: |
+          python ${{ github.workspace }}/catboost/ci/extract_release_changelog.py \
+            --all-changelog ${{ github.workspace }}/catboost/RELEASE.md  \
+            --dst-release-changelog ${{ github.workspace }}/RELEASE_changelog.md \
+            --release-version ${{ inputs.version }}
+
+      - name: Release on GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: ${{ github.workspace }}/RELEASE_changelog.md
+          files: upload/*
+          tag_name: v${{ inputs.version }}
+          discussion_category_name: Announcements
+          make_latest: ${{ inputs.make_latest && "true" || "false" }}
