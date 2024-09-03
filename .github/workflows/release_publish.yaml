@@ -205,6 +205,7 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
 
   publish_jvm_catboost_spark:
+    if: false
     name: Publish CatBoost for Apache Spark packages to Maven Central
     #needs:
     #  - publish_jvm_catboost_common
@@ -278,3 +279,70 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+
+  publish_on_github:
+    name: Publish Release on GitHub
+    #needs:
+    #  - publish_widget
+    #  - publish_python_package
+    #  - publish_jvm_catboost_common
+    #  - publish_jvm_catboost_prediction
+    #  - publish_jvm_catboost_spark
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python 3.12 for running scripts
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: catboost
+          ref: v${{ inputs.version }}
+          sparse-checkout: |
+            RELEASE.md
+            ci
+
+      - name: Env setup
+        shell: pwsh
+        run: |
+          New-Item -Path src_artifacts -ItemType Directory
+          Set-Location -LiteralPath ${{ github.workspace }}/src_artifacts
+          New-Item -Path R -ItemType Directory
+          
+      - name: Download R packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: catboost-R-package-*
+          merge-multiple: true
+          path: src_artifacts/R/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ inputs.artifacts_repository }}
+          run-id: ${{ inputs.artifacts_run_id }}
+
+      - name: Download CLI executables
+        uses: ./catboost/.github/actions/download_artifacts_for_all_platforms
+        with:
+          name: cli
+          artifacts_version: v${{ inputs.version }}
+          artifacts_run_id: ${{ inputs.artifacts_run_id }}
+          artifacts_repository: ${{ inputs.artifacts_repository }}
+          dst_path_prefix: src_artifacts/bin
+
+      - name: Download model_interface libraries
+        uses: ./catboost/.github/actions/download_artifacts_for_all_platforms
+        with:
+          name: model-interface
+          artifacts_version: v${{ inputs.version }}
+          artifacts_run_id: ${{ inputs.artifacts_run_id }}
+          artifacts_repository: ${{ inputs.artifacts_repository }}
+          dst_path_prefix: src_artifacts/model_interface
+
+      - name: Prepare release artifacts
+        run: |
+          python ${{ github.workspace }}/catboost/ci/prepare_release_artifacts.py \
+            --src-dir ${{ github.workspace }}/src_artifacts \
+            --dst-dir ${{ github.workspace }}/upload \
+            --release-version ${{ inputs.version }}
+          ls -lR ${{ github.workspace }}/upload
