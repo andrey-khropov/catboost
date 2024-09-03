@@ -2,7 +2,7 @@ on:
   workflow_call:
     inputs:
       version:
-        required: false
+        required: true
         type: string
       artifacts_run_id:
         required: false
