@@ -301,6 +301,7 @@ jobs:
           path: catboost
           ref: v${{ inputs.version }}
           sparse-checkout: |
+            .github
             RELEASE.md
             ci
 
