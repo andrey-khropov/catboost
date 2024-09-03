@@ -253,7 +253,7 @@ jobs:
       - name: Download catboost4j-spark-impl-sources
         uses: actions/download-artifact@v4
         with:
-          name: catboost4j-spark-impl-sources-${{ inputs.artifacts_version }}
+          name: catboost4j-spark-impl-sources-v${{ inputs.version }}
           path: prebuilt/spark/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
