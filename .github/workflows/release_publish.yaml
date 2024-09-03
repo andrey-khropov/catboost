@@ -32,7 +32,7 @@ on:
       artifacts_repository:
         required: false
         type: string
-        default: ${{ github.repository }}
+        default: andrey_khropov/catboost
       catboost_package_name:
         required: false
         type: string
