@@ -371,4 +371,4 @@ jobs:
           files: upload/*
           tag_name: v${{ inputs.version }}
           discussion_category_name: Announcements
-          make_latest: inputs.make_latest
+          make_latest: ${{ inputs.make_latest }}
