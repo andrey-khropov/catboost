@@ -6,7 +6,7 @@
 
     <groupId>ai.catboost</groupId>
     <artifactId>catboost-prediction</artifactId>
-    <version>1.2.6</version>
+    <version>1.2.6-DEV0</version>
     <packaging>jar</packaging>
     <name>CatBoost model applier</name>
     <description>Java module to apply CatBoost models</description>
@@ -142,7 +142,7 @@
                 <configuration>
                     <serverId>ossrh</serverId>
                     <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    <!-- <autoReleaseAfterClose>true</autoReleaseAfterClose> -->
                 </configuration>
             </plugin>
         </plugins>
@@ -200,7 +200,7 @@
         <dependency>
             <groupId>ai.catboost</groupId>
             <artifactId>catboost-common</artifactId>
-            <version>1.2.6</version>
+            <version>1.2.6-DEV0</version>
         </dependency>
     </dependencies>
 

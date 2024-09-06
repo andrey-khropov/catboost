@@ -32,9 +32,11 @@ on:
       version:
         required: true
         type: string
+        default: 1.2.6-DEV0
       artifacts_run_id:
         required: true
         type: string
+        default: 10714887116
       artifacts_repository:
         required: false
         type: string
@@ -56,6 +58,7 @@ on:
 jobs:
   publish_widget:
     name: Publish catboost-widget on NPM
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -89,6 +92,7 @@ jobs:
 
   publish_python_package:
     name: Publish Python package to PyPI
+    if: false
     runs-on: ubuntu-latest
 
     environment:
@@ -166,6 +170,7 @@ jobs:
           path: catboost
           ref: v${{ inputs.version }}
           sparse-checkout: |
+            .github/actions
             catboost/jvm-packages/catboost4j-prediction
             catboost/jvm-packages/tools
 
@@ -198,11 +203,12 @@ jobs:
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
 
-      - name: Install catboost-common locally
-        shell: pwsh
-        run: |
-          Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/jvm-packages/common
-          mvn install -DskipTests -Dgpg.skip
+      - name: Wait for catboost-common availability on Maven Central
+        uses: ./catboost/.github/actions/retried_wait_for_mvn_dependency
+        with:
+          groupId: ai.catboost
+          artifactId: catboost-common
+          version: ${{ inputs.version }}
 
       - name: Publish package
         run: |
@@ -232,6 +238,7 @@ jobs:
           path: catboost
           ref: v${{ inputs.version }}
           sparse-checkout: |
+            .github/actions
             catboost/jvm-packages/tools
             catboost/spark/catboost4j-spark
 
@@ -264,7 +271,7 @@ jobs:
       - name: Download catboost4j-spark-impl-sources
         uses: actions/download-artifact@v4
         with:
-          name: catboost4j-spark-impl-sources-v${{ inputs.version }}
+          name: catboost4j-spark-impl-sources-v1.2.6
           path: prebuilt/spark/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
@@ -280,11 +287,12 @@ jobs:
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
 
-      - name: Install catboost-common locally
-        shell: pwsh
-        run: |
-          Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/jvm-packages/common
-          mvn install -DskipTests -Dgpg.skip
+      - name: Wait for catboost-common availability on Maven Central
+        uses: ./catboost/.github/actions/retried_wait_for_mvn_dependency
+        with:
+          groupId: ai.catboost
+          artifactId: catboost-common
+          version: ${{ inputs.version }}
 
       - name: Publish package
         run: |
@@ -298,6 +306,7 @@ jobs:
 
   publish_on_github:
     name: Publish Release on GitHub
+    if: false
     needs:
       - publish_widget
       - publish_python_package

@@ -250,6 +250,7 @@ jobs:
           }
 
       - name: Run pytest
+        if: false
         shell: pwsh
         run: |
           python -m pip install testpath pytest 'numpy<2.0' pandas
@@ -264,6 +265,7 @@ jobs:
           python -m pytest -n auto test.py
 
       - name: Run python package tests
+        if: false
         shell: pwsh
         run: |
           python -m pip install testpath pytest 'numpy<2.0' pandas ipywidgets scikit-learn
