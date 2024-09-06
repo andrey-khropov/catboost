@@ -31,7 +31,7 @@ runs:
             subprocess.check_call(
               'mvn'
               ' -DgroupId=${{ inputs.groupId }}'
-              ' -DartifactId=${{ inputs.artifaceId }}'
+              ' -DartifactId=${{ inputs.artifactId }}'
               ' -Dversion=${{ inputs.version }}'
               ' dependency:get',
               shell=True
