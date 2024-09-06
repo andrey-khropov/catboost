@@ -288,7 +288,7 @@ jobs:
         shell: pwsh
         run: |
           Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/jvm-packages/common
-          mvn install -DskipTests -Dgpg.skip
+          mvn install -DskipTests -D"gpg.skip"
           Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/jvm-packages/catboost4j-prediction
           mvn -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/catboost4j-prediction_resources/ test
 
@@ -300,6 +300,6 @@ jobs:
         shell: pwsh
         run: |
           Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/jvm-packages/common
-          mvn install -DskipTests -Dgpg.skip
+          mvn install -DskipTests -D"gpg.skip"
           Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/spark/catboost4j-spark/projects/spark_3.5_2.12
           mvn -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark_core_resources/ -D"prebuilt.native.sources.jar"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark-impl-sources.jar test
