@@ -17,6 +17,7 @@ runs:
 
   steps:
     - name: Setup env
+      shell: pwsh
       run:
         python -m pip install tenacity
 
