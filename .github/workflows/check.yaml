@@ -3,7 +3,7 @@ name: Check build and tests
 on:
   push:
     branches:
-      - master
+      - github_actions_debug
 
 jobs:
   check:
