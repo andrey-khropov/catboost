@@ -19,8 +19,9 @@ class THistogramPointsAndBins {
         const TVector<double>& GetBins() const;
         void SetPointsAndBins(const TVector<double>& points, const TVector<double>& bins);
         const std::pair<size_t, double> FindBinAndPartion(const double& percentile) const;
-        bool IsBinsFilledWithZeros() const;
-        bool IsEmptyData() const;
-        bool IsInvalidPercentile(const double& percentile) const;
-        bool IsInvalidData(const double& percentile) const;
+        bool IsEqual(const THistogramPointsAndBins& secondOperand, const double eps) const;
+        bool IsValidBins() const;
+        bool IsValidPoints() const;
+        bool IsValidPercentile(const double& percentile) const;
+        bool IsValidData(const double& percentile) const;
 };
