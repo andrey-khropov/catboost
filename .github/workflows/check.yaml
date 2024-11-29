@@ -10,7 +10,7 @@ jobs:
     name: Check per OS
     strategy:
       matrix:
-        os: [macos-13]
+        os: [ubuntu-22.04]
       fail-fast: false
     with:
       runs-on_value: ${{ matrix.os }}
