@@ -9,6 +9,15 @@ on:
       main_release_version:
         required: true
         type: string
+
+  workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        type: string
+      main_release_version:
+        required: true
+        type: string
       
 jobs:
   publish:
