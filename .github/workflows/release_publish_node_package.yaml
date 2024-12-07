@@ -45,7 +45,7 @@ jobs:
       - name: Publish catboost npm package
         run: |
           cd ${{ github.workspace }}/catboost/catboost/node-package/
-          npm install tsc
+          npm install @types/node typescript@3.9.9
           npm run package_prepublish ${{ inputs.main_release_version }}
           npm publish --access public
         env:
