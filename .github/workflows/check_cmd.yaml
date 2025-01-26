@@ -12,8 +12,7 @@ jobs:
       matrix:
         os: [macos-13, windows-2022]
       fail-fast: false
-    with:
-      runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     steps:
       - if: matrix.os == 'macos-13'
         name: on macOS
