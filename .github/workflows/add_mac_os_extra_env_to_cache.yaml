@@ -10,7 +10,6 @@ jobs:
     steps:
       - name: Install pyenv and python versions and pack to zip file
         run: |
-          brew update
           brew install pyenv
 
           pyenv install 3.8.18

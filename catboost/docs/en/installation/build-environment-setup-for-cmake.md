@@ -12,6 +12,8 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
 
 {% include [cmake-platforms](../_includes/work_src/reusage-installation/cmake-platforms.md) %}
 
+{% include [docker-build-env](../_includes/work_src/reusage-installation/docker-build-env.md) %}
+
 ## Native artifacts build requirements
 
 ### [Python interpreter](https://www.python.org/)
@@ -45,12 +47,19 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
   - Linux
 
       - [`gcc` compiler](https://gcc.gnu.org/), not used to compile {{ product }} code itself but used to build dependencies as Conan packages.
-      - [`clang` compiler](https://clang.llvm.org/), version 14+ and version 13+ as a CUDA host compiler if you want to build with CUDA support.
+      - [`clang` compiler](https://clang.llvm.org/):
+
+        For `aarch64` CPU archirecture the minimum version is 18.1
+
+        For other CPU architectures the minimum version is 14
+
       - [`lld` linker](https://lld.llvm.org/), version 7+
 
       For Linux target the default CMake toolchain assumes that `clang` and `clang++` are available from the command line and will use them to compile {{ product }} components. If the default version of `clang` and `clang++` is not what is intended to be used for building then modify the toolchain file `$CATBOOST_SRC_ROOT/build/toolchains/clang.toolchain` - replace all occurences of `clang` and `clang++` with `clang-$CLANG_VERSION` and `clang++-$CLANG_VERSION` respectively where `$CLANG_VERSION` is the version of `clang` you want to use like, for example, `16` or `17` (must be already installed).
 
       For compilation with CUDA support the default CMake toolchain assumes that `clang-14` is available from the command line.
+
+      For revisions before [4602574](https://github.com/catboost/catboost/commit/4602574d7e5cbfd8bb1ea0f7f68a45561c844414) the minimal supported `clang` version for `aarch64` architecture has been 14.
 
       For revisions before [2347554](https://github.com/catboost/catboost/commit/2347554c1dfe6a044a2532f77ab7befb0f0c1960) the minimal supported `clang` as a CUDA host compiler version has been 12.
 
@@ -88,7 +97,9 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
 
   CUDA version 11.8 is supported by default (because it contains the biggest set of supported target CUDA compute architectures).
 
-  Other CUDA versions (11.4+) can also be used but require changing target compute architecture options in affected CMake targets.
+  Other CUDA versions (11.4 - 12.2) can also be used but require changing target compute architecture options in affected CMake targets.
+
+  CUDA 12.3+ support is in progress: [GitHub issue #2755](https://github.com/catboost/catboost/issues/2755).
 
   For revisions before [45cc2e1](https://github.com/catboost/catboost/commit/45cc2e12189e8fef6b0ccfd30ac192efab22ae98) the minimal supported CUDA version has been 11.0 .
 

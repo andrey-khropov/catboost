@@ -113,7 +113,7 @@ Napi::Value TModel::CalcPrediction(const Napi::CallbackInfo& info) {
         return env.Undefined();
     }
 
-    if (!NHelper::Check(env, info.Length() >= 2, "Wrong number of arguments - expected at least 2")) {
+    if (!NHelper::Check(env, info.Length() >= 1, "Wrong number of arguments - expected at least 1")) {
         return env.Undefined();
     }
 
@@ -138,30 +138,43 @@ Napi::Value TModel::CalcPrediction(const Napi::CallbackInfo& info) {
 
 
     // Categorical features
+    Napi::Value catFeatures;
+    bool catFeaturesAreHashes = false;
 
-    if (!NHelper::CheckIsMatrix(
-        env,
-        info[1],
-        NHelper::NAT_NUMBER_OR_STRING, "Expected the second argument to be a matrix of strings or numbers - "))
-    {
-        return env.Undefined();
-    }
-    const Napi::Array catFeatures = info[1].As<Napi::Array>();
+    if (info.Length() >= 2) {
+        catFeatures = info[1];
+        if (!NHelper::CheckIsMatrix(
+                env,
+                catFeatures,
+                NHelper::NAT_NUMBER_OR_STRING,
+                "Expected the second argument to be a matrix of strings or numbers - "
+            ))
+        {
+            return env.Undefined();
+        }
+        const Napi::Array catFeaturesArray = catFeatures.As<Napi::Array>();
 
-    if (!NHelper::Check(
-            env,
-            catFeatures.Length() == sampleCount,
-            "Expected the number of samples to be the same for both float and categorial features"
-        ))
-    {
-        return env.Undefined();
+        if (!NHelper::Check(
+                env,
+                catFeaturesArray.Length() == sampleCount,
+                "Expected the number of samples to be the same for both float and categorical features"
+            ))
+        {
+            return env.Undefined();
+        }
+        if (sampleCount) {
+            const Napi::Array catRow = catFeaturesArray[0u].As<Napi::Array>();
+            if (catRow.Length()) {
+                catFeaturesAreHashes = catRow[0u].IsNumber();
+            }
+        }
     }
-    const Napi::Array catRow = catFeatures[0u].As<Napi::Array>();
 
 
     // Text features
-    Napi::Value textFeatures = info[2];
-    if (!textFeatures.IsUndefined()) {
+    Napi::Value textFeatures;
+    if (info.Length() >= 3) {
+        textFeatures = info[2];
         if (!NHelper::CheckIsMatrix(
                 env,
                 textFeatures,
@@ -183,13 +196,14 @@ Napi::Value TModel::CalcPrediction(const Napi::CallbackInfo& info) {
     }
 
     // Embedding features
-    Napi::Value embeddingFeatures = info[3];
-    if (!embeddingFeatures.IsUndefined()) {
+    Napi::Value embeddingFeatures;
+    if (info.Length() == 4) {
+        embeddingFeatures = info[3];
         if (!NHelper::CheckIsMatrix(
                 env,
                 embeddingFeatures,
                 NHelper::NAT_ARRAY_OR_NUMBERS,
-                "Expected the third argument to be a matrix of arrays of numbers - "
+                "Expected the fourth argument to be a matrix of arrays of numbers - "
             ))
         {
             return env.Undefined();
@@ -206,7 +220,7 @@ Napi::Value TModel::CalcPrediction(const Napi::CallbackInfo& info) {
     }
 
 
-    if (catRow.Length() == 0 || catRow[0u].IsNumber()) {
+    if (catFeaturesAreHashes) {
         return CalcPredictionWithCatFeaturesAsHashes(
             env,
             sampleCount,
@@ -313,7 +327,7 @@ static void GetNumericFeaturesData(
 
 static void GetTextFeaturesData(
     const uint32_t sampleCount,
-    const Napi::Value& textFeatures, // array or undefined
+    const Napi::Value& textFeatures, // array or empty
     uint32_t* textFeatureCount,
     std::vector<std::string>* storage,
     std::vector<const char*>* dataPtrsStorage,
@@ -322,7 +336,7 @@ static void GetTextFeaturesData(
     storage->clear();
     dataPtrsStorage->clear();
     sampleDataPtrs->clear();
-    if (textFeatures.IsUndefined()) {
+    if (textFeatures.IsEmpty()) {
         *textFeatureCount = 0;
     } else {
         const Napi::Array textFeaturesArray = textFeatures.As<Napi::Array>();
@@ -350,7 +364,7 @@ static void GetTextFeaturesData(
 static bool GetEmbeddingFeaturesData(
     Napi::Env env,
     const uint32_t sampleCount,
-    const Napi::Value& embeddingFeatures, // array or undefined
+    const Napi::Value& embeddingFeatures, // array or empty
     uint32_t* embeddingFeatureCount,
     std::vector<size_t>* embeddingDimensions,
     std::vector<float>* storage,
@@ -361,7 +375,7 @@ static bool GetEmbeddingFeaturesData(
     storage->clear();
     dataPtrsStorage->clear();
     sampleDataPtrs->clear();
-    if (embeddingFeatures.IsUndefined()) {
+    if (embeddingFeatures.IsEmpty()) {
         *embeddingFeatureCount = 0;
     } else {
         const Napi::Array embeddingsFeaturesArray = embeddingFeatures.As<Napi::Array>();
@@ -412,7 +426,7 @@ static bool GetEmbeddingFeaturesData(
 
         *sampleDataPtrs = CollectMatrixRowPointers<const float*, const float**>(
             *dataPtrsStorage,
-            perSampleValuesSize
+            embeddingFeatureCountLocal
         );
     }
 
@@ -424,7 +438,7 @@ Napi::Array TModel::CalcPredictionWithCatFeaturesAsHashes(
     Napi::Env env,
     const uint32_t sampleCount,
     const Napi::Array& floatFeatures,
-    const Napi::Array& catFeatures,
+    const Napi::Value& catFeatures,
     const Napi::Value& textFeatures,
     const Napi::Value& embeddingFeatures
 ) {
@@ -435,18 +449,25 @@ Napi::Array TModel::CalcPredictionWithCatFeaturesAsHashes(
     GetNumericFeaturesData(sampleCount, floatFeatures, &floatFeaturesSize, &floatFeaturesStorage, &floatPtrs);
 
 
-    const uint32_t catFeaturesSize = catFeatures[0u].As<Napi::Array>().Length();
+    uint32_t catFeaturesSize = 0;
     std::vector<int> catHashValues;
-    catHashValues.reserve(catFeaturesSize * sampleCount);
+    std::vector<const int*> catPtrs;
 
-    for (uint32_t i = 0; i < sampleCount; ++i) {
-        const Napi::Array row = catFeatures[i].As<Napi::Array>();
-        for (uint32_t j = 0; j < catFeaturesSize; ++j) {
-            catHashValues.push_back(row[j].As<Napi::Number>().Int32Value());
+    if (!catFeatures.IsEmpty()) {
+        const Napi::Array catFeaturesArray = catFeatures.As<Napi::Array>();
+        catFeaturesSize = catFeaturesArray[0u].As<Napi::Array>().Length();
+
+        catHashValues.reserve(catFeaturesSize * sampleCount);
+
+        for (uint32_t i = 0; i < sampleCount; ++i) {
+            const Napi::Array row = catFeaturesArray[i].As<Napi::Array>();
+            for (uint32_t j = 0; j < catFeaturesSize; ++j) {
+                catHashValues.push_back(row[j].As<Napi::Number>().Int32Value());
+            }
         }
-    }
 
-    std::vector<const int*> catPtrs = CollectMatrixRowPointers<int>(catHashValues, catFeaturesSize);
+        catPtrs = CollectMatrixRowPointers<int>(catHashValues, catFeaturesSize);
+    }
 
 
     uint32_t textFeaturesSize = 0;
@@ -513,7 +534,7 @@ Napi::Array TModel::CalcPredictionWithCatFeaturesAsStrings(
     Napi::Env env,
     const uint32_t sampleCount,
     const Napi::Array& floatFeatures,
-    const Napi::Array& catFeatures,
+    const Napi::Value& catFeatures,
     const Napi::Value& textFeatures,
     const Napi::Value& embeddingFeatures
 ) {
@@ -523,26 +544,30 @@ Napi::Array TModel::CalcPredictionWithCatFeaturesAsStrings(
 
     GetNumericFeaturesData(sampleCount, floatFeatures, &floatFeaturesSize, &floatFeaturesStorage, &floatPtrs);
 
-
-    const uint32_t catFeaturesSize = catFeatures[0u].As<Napi::Array>().Length();
-
+    uint32_t catFeaturesSize = 0;
     std::vector<std::string> catStrings;
     std::vector<const char*> catStringValues;
-    catStrings.reserve(catFeaturesSize * sampleCount);
-    catStringValues.reserve(catFeaturesSize * sampleCount);
+    std::vector<const char**> catPtrs;
 
-    for (uint32_t i = 0; i < sampleCount; ++i) {
-        const Napi::Array row = catFeatures[i].As<Napi::Array>();
-        for (uint32_t j = 0; j < catFeaturesSize; ++j) {
-            catStrings.push_back(row[j].As<Napi::String>().Utf8Value());
-            catStringValues.push_back(catStrings.back().c_str());
+    if (!catFeatures.IsEmpty()) {
+        const Napi::Array catFeaturesArray = catFeatures.As<Napi::Array>();
+        catFeaturesSize = catFeaturesArray[0u].As<Napi::Array>().Length();
+
+        catStrings.reserve(catFeaturesSize * sampleCount);
+        catStringValues.reserve(catFeaturesSize * sampleCount);
+
+        for (uint32_t i = 0; i < sampleCount; ++i) {
+            const Napi::Array row = catFeaturesArray[i].As<Napi::Array>();
+            for (uint32_t j = 0; j < catFeaturesSize; ++j) {
+                catStrings.push_back(row[j].As<Napi::String>().Utf8Value());
+                catStringValues.push_back(catStrings.back().c_str());
+            }
         }
+        catPtrs = CollectMatrixRowPointers<const char*, const char**>(
+            catStringValues,
+            catFeaturesSize
+        );
     }
-    std::vector<const char**> catPtrs = CollectMatrixRowPointers<const char*, const char**>(
-        catStringValues,
-        catFeaturesSize
-    );
-
 
     uint32_t textFeaturesSize = 0;
     std::vector<std::string> textFeaturesStorage;

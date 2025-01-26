@@ -92,7 +92,7 @@ void BindPoolLoadParams(NLastGetopt::TOpts* parser, NCatboostOptions::TPoolLoadP
         .RequiredArgument("[SCHEME://]PATH[,[SCHEME://]PATH...]")
         .Handler1T<TStringBuf>([loadParamsPtr](const TStringBuf& str) {
             for (const auto& path : StringSplitter(str).Split(',').SkipEmpty()) {
-                if (!path.Empty()) {
+                if (!path.empty()) {
                     loadParamsPtr->TestSetPaths.emplace_back(TString{path.Token()}, "dsv");
                 }
             }
@@ -1142,7 +1142,7 @@ static void BindCatFeatureParams(NLastGetopt::TOpts* parserPtr, NJson::TJsonValu
         .Handler1T<size_t>([plainJsonPtr](const size_t oneHotMaxSize) {
             (*plainJsonPtr).InsertValue("one_hot_max_size", oneHotMaxSize);
         })
-        .Help("If parameter is specified than features with no more than specified value different values will be converted to float features using one-hot encoding. No ctrs will be calculated on this features.");
+        .Help("Use one-hot encoding for all categorical features with a number of different values less than or equal to the given parameter value. Ctrs are not calculated for such features.");
 }
 
 static void ParseDigitizerDescriptions(TStringBuf descriptionLine, TStringBuf idKey, NJson::TJsonValue* digitizers) {
