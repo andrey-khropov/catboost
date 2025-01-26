@@ -17,9 +17,11 @@ jobs:
       - if: matrix.os == 'macos-13'
         name: on macOS
         run: |
-          ln -s $RUNNER_TOOL_CACHE/Python/3.13.*/x64
+          ls -l $RUNNER_TOOL_CACHE/Python/3.13.*/x64
 
       - if: matrix.os == 'windows-2022'
         name: on Windows
         run: |
-          ls -l $Env:RUNNER_TOOL_CACHE\Python\3.13.*\x64
+          winget install python.python.3.13
+          gcm python3.13
+
