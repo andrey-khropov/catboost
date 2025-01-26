@@ -28,6 +28,11 @@ jobs:
       - if: matrix.os == 'windows-2022'
         name: on Windows
         run: |
-          # ls -l $Env:RUNNER_TOOL_CACHE\python\3.13.*\x64
-          gcm python
+          New-Item -Path Python -ItemType Directory
+          Set-Location -Path .\Python
+          New-Item -Path .\3.13 -ItemType SymbolicLink -Value "$Env:RUNNER_TOOL_CACHE\Python\3.13.*\x64"
+
+          foreach($PY_VER in '3.13') {
+            & "$PY_VER\python.exe" -m pip install --upgrade pip setuptools wheel
+          }
 
