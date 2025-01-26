@@ -1,0 +1,24 @@
+name: Check build and tests
+
+on:
+  push:
+    branches:
+      - github_actions_debug
+
+jobs:
+  check:
+    name: Check per OS
+    strategy:
+      matrix:
+        os: [macos-13, windows-2022]
+      fail-fast: false
+    steps:
+      - if: inputs.runs-on_value == 'macos-13'
+        name: on macOS
+        run: |
+          ln -s $RUNNER_TOOL_CACHE/Python/3.13.*/x64
+
+      - if: inputs.runs-on_value == 'windows-2022'
+        name: on Windows
+        run: |
+          ls -l $Env:RUNNER_TOOL_CACHE\Python\3.13.*\x64
