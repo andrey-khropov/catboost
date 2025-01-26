@@ -10,7 +10,7 @@ jobs:
     name: Check per OS
     strategy:
       matrix:
-        os: [macos-13, windows-2022]
+        os: [windows-2022]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -20,8 +20,13 @@ jobs:
           ls -l $RUNNER_TOOL_CACHE/Python/3.13.*/x64
 
       - if: matrix.os == 'windows-2022'
+        name: Setup python3.13 on Windows
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - if: matrix.os == 'windows-2022'
         name: on Windows
         run: |
-          winget install python.python.3.13
           gcm python3.13
 
