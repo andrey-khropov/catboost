@@ -28,5 +28,5 @@ jobs:
       - if: matrix.os == 'windows-2022'
         name: on Windows
         run: |
-          ls -l $Env:RUNNER_TOOL_CACHE\Python\3.13.*\x64
+          ls -l $Env:RUNNER_TOOL_CACHE\python\3.13.*\x64
 
