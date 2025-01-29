@@ -147,6 +147,7 @@ jobs:
         name: Env setup on Windows
         run: |
           python -m pip install -U conan==2.4.1 setuptools wheel jupyterlab==3.0.6 build
+          & conan --version
 
           choco install ninja
 
