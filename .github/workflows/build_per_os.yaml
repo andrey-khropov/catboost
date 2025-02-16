@@ -136,10 +136,17 @@ jobs:
           python-version: '3.13'
 
       - if: inputs.runs-on_value == 'windows-2022'
+        name: Install CUDA on Windows
+        uses: Jimver/cuda-toolkit@v0.2.15
+        id: cuda-toolkit
+        with:
+          cuda: '11.8.0'
+          method: 'local'
+
+      - if: inputs.runs-on_value == 'windows-2022'
         name: Env setup on Windows
         run: |
           python -m pip install -U conan==2.4.1 setuptools wheel jupyterlab==3.0.6 build
-          & conan --version
 
           choco install ninja
 
@@ -168,13 +175,14 @@ jobs:
             & "$CMAKE_BUILD_ENV_ROOT\windows-x86_64\Python\$PY_VER\python.exe" -m pip install --upgrade pip setuptools wheel
           }
 
-          & conan --version
+          # CUDA
+          Set-Location -Path $CMAKE_BUILD_ENV_ROOT\windows-x86_64
+          New-Item -Path CUDA -ItemType Directory
+          New-Item -Path .\CUDA\v11.8 -ItemType SymbolicLink -Value "${{steps.cuda-toolkit.outputs.CUDA_PATH}}"
 
           # MSVC toolset
           $VS_DIR="C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise"
           & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --installPath "$VS_DIR" --channelId VisualStudio.16.Release --add Microsoft.VisualStudio.Component.VC.14.28.16.9.x86.x64 --downloadThenInstall --quiet --norestart --nocache
-
-          & conan --version
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -193,7 +201,6 @@ jobs:
       - name: Prepare CMake build cache
         shell: pwsh
         run: |
-          & conan --version
           if (Test-Path cmake_build_cache) {
             if (Test-Path cmake_build_cache/git_commit_sha) {
               # Set timestamps such as that only files changed after the commit in cache are newer than its files
@@ -208,7 +215,6 @@ jobs:
             New-Item -Path cmake_build_cache -ItemType Directory
           }
           Set-Location -LiteralPath ${{ github.workspace }}/catboost
-          & conan --version
           git checkout ${{ inputs.revision }}
 
       - name: Fixup python package version
@@ -228,11 +234,9 @@ jobs:
         name: Build all without container
         shell: pwsh
         run: |
-          & conan --version
           $Env:CMAKE_BUILD_ENV_ROOT = Join-Path ${{ github.workspace }} cmake_build_env_root
           $Env:CMAKE_BUILD_CACHE_DIR = Join-Path ${{ github.workspace }} cmake_build_cache
           Set-Location -Path catboost
-          & conan --version
           python ./ci/build_all.py --build-test-tools
 
       - name: Save commit id to CMake build cache
