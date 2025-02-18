@@ -14,7 +14,7 @@ class App(ConanFile):
     default_options = {}
 
     def requirements(self):
-        self.requires("openssl/3.2.3")
+        self.requires("openssl/1.1.1t")
 
     def build_requirements(self):
         self.tool_requires("ragel/6.10")
