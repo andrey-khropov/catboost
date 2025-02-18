@@ -31,7 +31,7 @@ jobs:
               arch = platform.machine()
               if arch == 'AMD64':
                   arch = 'x86_64'
-                  return system_name + '-' + arch
+              return system_name + '-' + arch
 
           platform_name = get_native_platform_name()
           print(f"platform_name={platform_name}")
