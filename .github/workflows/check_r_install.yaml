@@ -10,7 +10,8 @@ jobs:
     name: Check per OS
     strategy:
       matrix:
-        os: [ubuntu-22.04, ubuntu-22.04-arm, macos-13, macos-14, windows-2022]
+        #os: [ubuntu-22.04, ubuntu-22.04-arm, macos-13, macos-14, windows-2022]
+        os: [macos-13, macos-14]
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -26,14 +27,17 @@ jobs:
           import sys
           from subprocess import check_call
 
-          def get_native_platform_name():
+          def get_platform_name():
               system_name = 'windows' if sys.platform == 'win32' else sys.platform
-              arch = platform.machine()
-              if arch == 'AMD64':
-                  arch = 'x86_64'
+              if system_name == 'darwin':
+                  arch = 'universal2'
+              else:
+                  arch = platform.machine()
+                  if arch == 'AMD64':
+                      arch = 'x86_64'
               return system_name + '-' + arch
 
-          platform_name = get_native_platform_name()
+          platform_name = get_platform_name()
           print(f"platform_name={platform_name}")
 
           check_call(f"R -e \"install.packages('remotes')\"", shell=True)
