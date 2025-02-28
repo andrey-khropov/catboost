@@ -3,14 +3,14 @@ name: Check build and tests
 on:
   push:
     branches:
-      - master_1
+      - cuda_install_debug
 
 jobs:
   check:
     name: Check per OS
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-13, windows-2022]
+        os: [windows-2022]
       fail-fast: false
     with:
       runs-on_value: ${{ matrix.os }}

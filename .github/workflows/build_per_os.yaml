@@ -137,7 +137,7 @@ jobs:
 
       - if: inputs.runs-on_value == 'windows-2022'
         name: Install CUDA on Windows
-        uses: Jimver/cuda-toolkit@v0.2.15
+        uses: Jimver/cuda-toolkit@v0.2.21
         id: cuda-toolkit
         with:
           cuda: '11.8.0'
