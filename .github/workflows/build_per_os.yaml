@@ -219,6 +219,7 @@ jobs:
       - if: inputs.runs-on_value == 'macos-14'
         name: Build all without container
         run: |
+          export DEVELOPER_DIR=/Applications/Xcode_16.2.app
           export CMAKE_BUILD_ENV_ROOT=${{ github.workspace }}/cmake_build_env_root
           export CMAKE_BUILD_CACHE_DIR=${{ github.workspace }}/cmake_build_cache
           source ${{ github.workspace }}/venv/bin/activate
