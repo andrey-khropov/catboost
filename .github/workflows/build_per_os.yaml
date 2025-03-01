@@ -78,7 +78,9 @@ jobs:
       - if: inputs.runs-on_value == 'macos-14'
         name: Env setup on macOS
         run: |
-          python3 -m pip install --user -U conan==2.4.1 setuptools wheel jupyterlab==3.0.6 build
+          python3 -m venv ${{ github.workspace }}/venv
+          source {{ github.workspace }}/venv/bin/activate
+          python3 -m pip install -U conan==2.4.1 setuptools wheel jupyterlab==3.0.6 build
 
           brew update
           brew install ninja
@@ -238,4 +240,5 @@ jobs:
           $Env:CMAKE_BUILD_CACHE_DIR = Join-Path ${{ github.workspace }} cmake_build_cache
           #Set-Location -Path catboost
           #python ./ci/build_all.py --build-test-tools
+          source {{ github.workspace }}/venv/bin/activate
           python ./catboost/build/build_native.py --build-root-dir ./build_debug --build-type Debug --targets catboost,catboostmodel_static,_hnsw,_catboost,catboostmodel,catboost_train_interface,catboost4j-prediction,catboost4j-spark-impl,catboost4j-spark-impl-cpp,limited_precision_dsv_diff,limited_precision_json_diff,model_comparator
