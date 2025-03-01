@@ -76,6 +76,12 @@ jobs:
             python_versions_macos_arm64
 
       - if: inputs.runs-on_value == 'macos-14'
+        name: Set python 3.12 as default
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - if: inputs.runs-on_value == 'macos-14'
         name: Env setup on macOS
         run: |
           python3 -m venv ${{ github.workspace }}/venv
