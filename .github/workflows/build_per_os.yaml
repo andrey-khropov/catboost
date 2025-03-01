@@ -216,13 +216,10 @@ jobs:
           rm -fr ${{ github.workspace }}/catboost_build_home/*
           docker run --rm --name=catboost_build --user $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v ${{ github.workspace }}/catboost_build_home:$HOME -v ${{ github.workspace }}/catboost:/src/catboost -v ${{ github.workspace }}/$CMAKE_BUILD_CACHE_DIR:/cmake_build_cache -e CATBOOST_PACKAGE_NAME -e CATBOOST_PACKAGE_VERSION ghcr.io/catboost/manylinux2014_x86_64_and_cross_arm64_for_catboost_ci:latest bash -c ". /work/setup_env/build_x86_64.sh && export CMAKE_BUILD_CACHE_DIR=/cmake_build_cache/ && ln -sf /opt/cmake_build_env_root $HOME/ && rsync -rptl /opt/.conan2 $HOME/ && python3 -m pip install conan==2.4.1 && cd /src/catboost && ./ci/build_all.py  --build-test-tools"
 
-      - if: inputs.runs-on_value != 'ubuntu-22.04'
+      - if: inputs.runs-on_value == 'macos-14'
         name: Build all without container
-        shell: pwsh
         run: |
-          $Env:CMAKE_BUILD_ENV_ROOT = Join-Path ${{ github.workspace }} cmake_build_env_root
-          $Env:CMAKE_BUILD_CACHE_DIR = Join-Path ${{ github.workspace }} cmake_build_cache
-          #Set-Location -Path catboost
-          #python ./ci/build_all.py --build-test-tools
-          source {{ github.workspace }}/venv/bin/activate
+          export CMAKE_BUILD_ENV_ROOT=${{ github.workspace }}/cmake_build_env_root
+          export CMAKE_BUILD_CACHE_DIR=${{ github.workspace }}/cmake_build_cache
+          source ${{ github.workspace }}/venv/bin/activate
           python ./catboost/build/build_native.py --build-root-dir ./build_debug --build-type Debug --targets catboost,catboostmodel_static,_hnsw,_catboost,catboostmodel,catboost_train_interface,catboost4j-prediction,catboost4j-spark-impl,catboost4j-spark-impl-cpp,limited_precision_dsv_diff,limited_precision_json_diff,model_comparator
