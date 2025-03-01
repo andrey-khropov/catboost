@@ -127,6 +127,8 @@ jobs:
           cd Python
           unzip ${{ github.workspace }}/python_versions_macos_arm64
 
+          export DEVELOPER_DIR=/Applications/Xcode_16.2.app
+
       # Python 3.13 is not included in the standard 'windows-2022' image yet.
       # Should be available soon: https://github.com/actions/runner-images/pull/11438
       - if: inputs.runs-on_value == 'windows-2022'
