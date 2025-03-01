@@ -64,7 +64,7 @@ jobs:
           remove-codeql: 'true'
           remove-docker-images: 'true'
 
-      - if: ${{ (inputs.runs-on_value == "macos-13") || (inputs.runs-on_value == "macos-14") }}
+      - if: inputs.runs-on_value == 'macos-14'
         name: Get python_versions_macos_arm64 from cache
         uses: actions/cache/restore@v4
         with:
@@ -75,7 +75,7 @@ jobs:
           restore-keys: |
             python_versions_macos_arm64
 
-      - if: ${{ (inputs.runs-on_value == "macos-13") || (inputs.runs-on_value == "macos-14") }}
+      - if: inputs.runs-on_value == 'macos-14'
         name: Env setup on macOS
         run: |
           python3 -m pip install -U conan==2.4.1 setuptools wheel jupyterlab==3.0.6 build
