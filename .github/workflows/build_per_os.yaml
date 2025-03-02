@@ -86,7 +86,7 @@ jobs:
         run: |
           python3 -m venv ${{ github.workspace }}/venv
           source ${{ github.workspace }}/venv/bin/activate
-          python3 -m pip install -U conan==2.4.1 setuptools wheel jupyterlab==3.0.6 build
+          python3 -m pip install -U conan==2.13.0 setuptools wheel jupyterlab==3.0.6 build
           python3 -m pip install --upgrade pip setuptools wheel
 
           brew update
