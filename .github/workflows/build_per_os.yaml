@@ -191,13 +191,13 @@ jobs:
           path: catboost
           fetch-depth: 0
 
-      # - name: Update CMake build cache on every commit
-      #  uses: actions/cache@v4
-      #  with:
-      #    path: cmake_build_cache
-      #    key: cmake_build_cache-${{ runner.os }}-${{ github.run_id }} # Can use time based key as well
-      #    restore-keys: |
-      #      cmake_build_cache-${{ runner.os }}
+      - name: Update CMake build cache on every commit
+        uses: actions/cache@v4
+        with:
+          path: cmake_build_cache
+          key: cmake_build_cache-${{ runner.os }}-${{ github.run_id }} # Can use time based key as well
+          restore-keys: |
+            cmake_build_cache-${{ runner.os }}
 
       - name: Prepare CMake build cache
         shell: pwsh
@@ -229,7 +229,7 @@ jobs:
         run: |
           mkdir -p ${{ github.workspace }}/catboost_build_home
           rm -fr ${{ github.workspace }}/catboost_build_home/*
-          docker run --rm --name=catboost_build --user $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v ${{ github.workspace }}/catboost_build_home:$HOME -v ${{ github.workspace }}/catboost:/src/catboost -v ${{ github.workspace }}/$CMAKE_BUILD_CACHE_DIR:/cmake_build_cache -e CATBOOST_PACKAGE_NAME -e CATBOOST_PACKAGE_VERSION ghcr.io/catboost/manylinux2014_x86_64_and_cross_arm64_for_catboost_ci:latest bash -c ". /work/setup_env/build_x86_64.sh && export CMAKE_BUILD_CACHE_DIR=/cmake_build_cache/ && ln -sf /opt/cmake_build_env_root $HOME/ && rm -fr $HOME/.conan2 && python3 -m pip install conan==2.4.1 && cd /src/catboost && ./ci/conan/init.sh && ./ci/build_all.py  --build-test-tools"
+          docker run --rm --name=catboost_build --user $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v ${{ github.workspace }}/catboost_build_home:$HOME -v ${{ github.workspace }}/catboost:/src/catboost -v ${{ github.workspace }}/$CMAKE_BUILD_CACHE_DIR:/cmake_build_cache -e CATBOOST_PACKAGE_NAME -e CATBOOST_PACKAGE_VERSION ghcr.io/catboost/manylinux2014_x86_64_and_cross_arm64_for_catboost_ci:latest bash -c ". /work/setup_env/build_x86_64.sh && export CMAKE_BUILD_CACHE_DIR=/cmake_build_cache/ && ln -sf /opt/cmake_build_env_root $HOME/ && rsync -rptl /opt/.conan2 $HOME/ && python3 -m pip install conan==2.4.1 && cd /src/catboost && ./ci/build_all.py  --build-test-tools"
 
       - if: inputs.os != 'linux'
         name: Build all without container
