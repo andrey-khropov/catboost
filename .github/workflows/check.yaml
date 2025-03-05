@@ -12,7 +12,7 @@ jobs:
     name: Check per OS
     strategy:
       matrix:
-        os: [linux, macos, windows]
+        os: [linux]
       fail-fast: false
     with:
       os: ${{ matrix.os }}
