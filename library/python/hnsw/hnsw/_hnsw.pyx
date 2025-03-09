@@ -1,6 +1,7 @@
 # distutils: language = c++
 # coding: utf-8
 # cython: wraparound=False, boundscheck=False
+# cython: language_level=2
 
 from cpython.ref cimport PyObject, Py_DECREF
 
@@ -70,10 +71,10 @@ cdef extern from "library/python/hnsw/hnsw/helpers.h" namespace "NHnsw::PythonHe
                        ui32* resultNeighInd,  # [nQueries x topSize] array
 
                        # [nQueries x topSize] array, can be null (do not return distance in this case)
-                       void* resultNeighDist) except +  
-                                     
+                       void* resultNeighDist) except +
+
     TBlob BuildDenseVectorIndex[T](const TString& jsonOptions, const TDenseVectorStorage[T]* storage,
-                                             EDistance distance) nogil except +
+                                             EDistance distance) except + nogil
     void SaveIndex(const TBlob& indexBlob, const TString& path) except +
     TBlob LoadIndex(const TString &path) except +
 
@@ -178,7 +179,7 @@ cdef class _DenseFloatVectorStorage:
         self._dimension = dimension
         if vectors_filename is not None:
             self._load_from_file(_to_binary_str(vectors_filename))
-        if bin_data is not None: 
+        if bin_data is not None:
             self._load_from_bytearray(bin_data)
         if array_data is not None:
             self._load_from_array(array_data)
@@ -210,7 +211,7 @@ cdef class _DenseI8VectorStorage:
         self._dimension = dimension
         if vectors_filename is not None:
             self._load_from_file(_to_binary_str(vectors_filename))
-        if bin_data is not None: 
+        if bin_data is not None:
             self._load_from_bytearray(bin_data)
         if array_data is not None:
             self._load_from_array(array_data)
@@ -242,7 +243,7 @@ cdef class _DenseI32VectorStorage:
         self._dimension = dimension
         if vectors_filename is not None:
             self._load_from_file(_to_binary_str(vectors_filename))
-        if bin_data is not None: 
+        if bin_data is not None:
             self._load_from_bytearray(bin_data)
         if array_data is not None:
             self._load_from_array(array_data)
@@ -322,7 +323,7 @@ cdef class _HnswDenseFloatVectorIndex(_HnswDenseVectorIndex):
         return _get_nearest_neighbors_float(self._index_impl, &q[0], top_size, search_neighborhood_size,
                                             distance_calc_limit, self._storage._storage_impl, self._distance)
 
-    def _kneighbors(self, X, size_t n_neighbors, bool_t return_distance, EDistance distance, 
+    def _kneighbors(self, X, size_t n_neighbors, bool_t return_distance, EDistance distance,
                     size_t search_neighborhood_size, size_t distance_calc_limit):
         cdef np.float32_t[:, ::1] queries = np.ascontiguousarray(X, dtype=np.float32)
         cdef np.ndarray neigh_ind = np.empty((queries.shape[0], n_neighbors), dtype=np.uint32)
@@ -347,7 +348,7 @@ cdef class _HnswDenseFloatVectorIndex(_HnswDenseVectorIndex):
                 self._index_impl,
                 <const float*>&queries[0,0],
                 queries.shape[0],
-                n_neighbors, 
+                n_neighbors,
                 search_neighborhood_size,
                 distance_calc_limit,
                 self._storage._storage_impl,
@@ -384,7 +385,7 @@ cdef class _HnswDenseI8VectorIndex(_HnswDenseVectorIndex):
         return _get_nearest_neighbors_i8(self._index_impl, &q[0], top_size, search_neighborhood_size,
                                          distance_calc_limit, self._storage._storage_impl, self._distance)
 
-    def _kneighbors(self, X, size_t n_neighbors, bool_t return_distance, EDistance distance, 
+    def _kneighbors(self, X, size_t n_neighbors, bool_t return_distance, EDistance distance,
                     size_t search_neighborhood_size, size_t distance_calc_limit):
         cdef np.int8_t[:, ::1] queries = np.ascontiguousarray(X, dtype=np.int8)
         cdef np.ndarray neigh_ind = np.empty((queries.shape[0], n_neighbors), dtype=np.uint32)
@@ -409,7 +410,7 @@ cdef class _HnswDenseI8VectorIndex(_HnswDenseVectorIndex):
                 self._index_impl,
                 &queries[0,0],
                 queries.shape[0],
-                n_neighbors, 
+                n_neighbors,
                 search_neighborhood_size,
                 distance_calc_limit,
                 self._storage._storage_impl,
@@ -446,7 +447,7 @@ cdef class _HnswDenseI32VectorIndex(_HnswDenseVectorIndex):
         return _get_nearest_neighbors_i32(self._index_impl, &q[0], top_size, search_neighborhood_size,
                                           distance_calc_limit, self._storage._storage_impl, self._distance)
 
-    def _kneighbors(self, X, size_t n_neighbors, bool_t return_distance, EDistance distance, 
+    def _kneighbors(self, X, size_t n_neighbors, bool_t return_distance, EDistance distance,
                     size_t search_neighborhood_size, size_t distance_calc_limit):
         cdef np.int32_t[:, ::1] queries = np.ascontiguousarray(X, dtype=np.int32)
         cdef np.ndarray neigh_ind = np.empty((queries.shape[0], n_neighbors), dtype=np.uint32)
@@ -471,7 +472,7 @@ cdef class _HnswDenseI32VectorIndex(_HnswDenseVectorIndex):
                 self._index_impl,
                 <i32*>&queries[0,0],
                 queries.shape[0],
-                n_neighbors, 
+                n_neighbors,
                 search_neighborhood_size,
                 distance_calc_limit,
                 self._storage._storage_impl,
