@@ -1,6 +1,7 @@
 # distutils: language = c++
 # coding: utf-8
 # cython: wraparound=False, boundscheck=False, initializedcheck=False
+# cython: language_level=2
 
 from catboost.base_defs cimport *
 from catboost.libs.model.cython cimport *
@@ -601,7 +602,7 @@ cdef extern from "catboost/libs/metrics/metric.h":
     cdef TJsonValue ExportAllMetricsParamsToJson() except +ProcessException
 
 def AllMetricsParams():
-    return loads(to_native_str(WriteTJsonValue(ExportAllMetricsParamsToJson())))
+    return json_value_to_dict(ExportAllMetricsParamsToJson())
 
 cdef extern from "catboost/private/libs/algo/tree_print.h":
     TVector[TString] GetTreeSplitsDescriptions(
@@ -1233,15 +1234,24 @@ cdef inline float _FloatOrNan(object obj) except *:
 cpdef _float_or_nan(obj):
     return _FloatOrNan(obj)
 
+cdef inline to_native_str(binary):
+    if PY_MAJOR_VERSION >= 3 and hasattr(binary, 'decode'):
+        return binary.decode()
+    return binary
 
-cdef TString _MetricGetDescription(void* customData) with gil:
+cdef json_value_to_dict(const TJsonValue& jsonValue):
+    cdef TString jsonString = WriteTJsonValue(jsonValue)
+    return loads(to_native_str(jsonString))
+
+
+cdef TString _MetricGetDescription(void* customData) noexcept with gil:
     cdef metricObject = <object>customData
     name = metricObject.__class__.__name__
     if PY_MAJOR_VERSION >= 3:
         name = name.encode()
     return TString(<const char*>name)
 
-cdef bool_t _MetricIsMaxOptimal(void* customData) with gil:
+cdef bool_t _MetricIsMaxOptimal(void* customData) noexcept with gil:
     cdef metricObject = <object>customData
     try:
         return metricObject.is_max_optimal()
@@ -1250,11 +1260,11 @@ cdef bool_t _MetricIsMaxOptimal(void* customData) with gil:
         with nogil:
             ThrowCppExceptionWithMessage(errorMessage)
 
-cdef bool_t _MetricIsAdditive(void* customData) with gil:
+cdef bool_t _MetricIsAdditive(void* customData) noexcept with gil:
     cdef metricObject = <object>customData
     return hasattr(metricObject, 'is_additive') and metricObject.is_additive()
 
-cdef double _MetricGetFinalError(const TMetricHolder& error, void *customData) with gil:
+cdef double _MetricGetFinalError(const TMetricHolder& error, void *customData) noexcept with gil:
     # TODO(nikitxskv): use error.Stats for custom metrics.
     cdef metricObject = <object>customData
     try:
@@ -1267,7 +1277,7 @@ cdef double _MetricGetFinalError(const TMetricHolder& error, void *customData) w
 cdef bool_t _CallbackAfterIteration(
         const TMetricsAndTimeLeftHistory& history,
         void* customData
-    ) with gil:
+    ) noexcept with gil:
     cdef callbackObject = <object>customData
     if PY_MAJOR_VERSION >= 3:
         info = types.SimpleNamespace()
@@ -1472,7 +1482,7 @@ cdef void _GpuObjectiveCalcDersRange(
     void* cudaStream,
     size_t blockSize,
     size_t numBlocks
-) with gil:
+) noexcept with gil:
     from numba import cuda as numba_cuda
     approx_gpu = _ToPythonObjArrayRefOnGpu(approx.size(), <uint64_t>approx.data())
     target_gpu = _ToPythonObjArrayRefOnGpu(target.size(), <uint64_t>target.data())
@@ -1500,7 +1510,7 @@ cdef void _GpuMetricEval(
     void* cudaStream,
     size_t blockSize,
     size_t numBlocks
-) with gil:
+) noexcept with gil:
     from numba import cuda as numba_cuda
     approx_gpu = _ToPythonObjArrayRefOnGpu(approx.size(), <uint64_t>approx.data())
     target_gpu = _ToPythonObjArrayRefOnGpu(target.size(), <uint64_t>target.data())
@@ -1519,7 +1529,7 @@ cdef TMetricHolder _MetricEval(
     int begin,
     int end,
     void* customData
-) with gil:
+) noexcept with gil:
     cdef metricObject = <object>customData
     cdef TString errorMessage
     cdef TMetricHolder holder
@@ -1551,7 +1561,7 @@ cdef TMetricHolder _MultiTargetMetricEval(
     int begin,
     int end,
     void* customData
-) with gil:
+) noexcept with gil:
     cdef metricObject = <object>customData
     cdef TString errorMessage
     cdef TMetricHolder holder
@@ -1578,7 +1588,7 @@ cdef TMetricHolder _MultiTargetMetricEval(
 
 cdef double _RandomDistGen(
     void* customFunction
-) with gil:
+) noexcept with gil:
     cdef randomDistGenerator = <object>customFunction
     cdef TString errorMessage
     try:
@@ -1596,7 +1606,7 @@ cdef void _ObjectiveCalcDersRange(
     const float* weights,
     TDers* ders,
     void* customData
-) with gil:
+) noexcept with gil:
     cdef objectiveObject = <object>(customData)
     cdef TString errorMessage
     cdef Py_ssize_t index
@@ -1647,7 +1657,7 @@ cdef void _ObjectiveCalcDersMultiClass(
     TVector[double]* ders,
     THessianInfo* der2,
     void* customData
-) with gil:
+) noexcept with gil:
     cdef objectiveObject = <object>(customData)
     cdef TString errorMessage
 
@@ -1677,7 +1687,7 @@ cdef void _ObjectiveCalcDersMultiTarget(
     TVector[double]* ders,
     THessianInfo* der2,
     void* customData
-) with gil:
+) noexcept with gil:
     cdef objectiveObject = <object>(customData)
     cdef TString errorMessage
 
@@ -2046,10 +2056,6 @@ cdef inline TString to_arcadia_string(s) except *:
         bytes_s = s
     return TString(<const char*>&bytes_s[0], len(bytes_s))
 
-cdef inline to_native_str(binary):
-    if PY_MAJOR_VERSION >= 3 and hasattr(binary, 'decode'):
-        return binary.decode()
-    return binary
 
 cdef all_string_types_plus_bytes = string_types + (bytes,)
 
@@ -3541,9 +3547,9 @@ cdef _set_objects_order_data_scipy_sparse_matrix(
     cdef TVector[bool_t] is_cat_feature_mask = _get_is_feature_type_mask(features_layout, EFeatureType_Categorical)
     cdef TVector[bool_t] is_text_feature_mask = _get_is_feature_type_mask(features_layout, EFeatureType_Text)
     cdef TVector[bool_t] is_embedding_feature_mask = _get_is_feature_type_mask(features_layout, EFeatureType_Embedding)
-    if np.any(is_text_feature_mask):
+    if features_layout.GetTextFeatureCount():
         raise CatBoostError('Text features reading is not supported in sparse matrix format')
-    if (not has_separate_embedding_features_data) and np.any(is_embedding_feature_mask):
+    if (not has_separate_embedding_features_data) and features_layout.GetEmbeddingFeatureCount():
         raise CatBoostError('Embedding features reading is not supported in sparse matrix format')
 
     if isinstance(data, scipy.sparse.bsr_matrix):
@@ -5436,7 +5442,7 @@ cdef class _CatBoost:
             return {}
 
     cpdef _get_plain_params(self):
-        return loads(to_native_str(WriteTJsonValue(GetPlainJsonWithAllOptions(dereference(self.__model)))))
+        return json_value_to_dict(GetPlainJsonWithAllOptions(dereference(self.__model)))
 
     def _get_tree_count(self):
         return self.__model.GetTreeCount()
@@ -5611,7 +5617,7 @@ cdef class _CatBoost:
             )
             result_metrics.add(name)
 
-        best_params = loads(to_native_str(WriteTJsonValue(results.BestParams)))
+        best_params = json_value_to_dict(results.BestParams)
         search_result = {}
         search_result["params"] = best_params
         if return_cv_results:
@@ -5642,7 +5648,7 @@ cdef class _CatBoost:
                 )
             finally:
                 ResetPythonInterruptHandler()
-        return loads(to_native_str(WriteTJsonValue(summary_json)))
+        return json_value_to_dict(summary_json)
 
     cpdef _get_binarized_statistics(self, _PoolBase pool, catFeaturesNums, floatFeaturesNums, predictionType, int thread_count):
         thread_count = UpdateThreadCount(thread_count)
@@ -6337,7 +6343,7 @@ cpdef _select_threshold(model, data, curve, FPR, FNR, thread_count):
     return rocCurve.SelectDecisionBoundaryByIntersection()
 
 
-cdef void _WriteLog(const char* str, size_t len, void* targetObject) with gil:
+cdef void _WriteLog(const char* str, size_t len, void* targetObject) noexcept with gil:
     cdef streamLikeObject = <object> targetObject
     cdef bytes bytes_str = str[:len]
     streamLikeObject.write(to_native_str(bytes_str))
@@ -6484,7 +6490,7 @@ cpdef convert_features_to_indices(indices_or_names, cd_path, feature_names_path,
         pool_metainfo_path_with_scheme,
         &indices_or_names_as_json
     )
-    return loads(to_native_str(WriteTJsonValue(indices_or_names_as_json)))
+    return json_value_to_dict(indices_or_names_as_json)
 
 
 cdef inline TArrayRef[float] get_array_ref(np.float32_t[::1] src) noexcept:
@@ -6654,7 +6660,7 @@ cpdef compute_training_options(dict options, DataMetaInfo train_meta_info, DataM
         train_meta_info.DataMetaInfo,
         testMetaInfo
     )
-    return loads(to_native_str(WriteTJsonValue(trainingOptions)))
+    return json_value_to_dict(trainingOptions)
 
 
 cpdef _get_onnx_model(model, export_parameters):
