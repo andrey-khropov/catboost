@@ -5,6 +5,7 @@
 
 from cpython.version cimport PY_MAJOR_VERSION
 
+from util.generic.array_ref cimport TConstArrayRef
 from util.generic.string cimport TString, TStringBuf
 from util.generic.vector cimport TVector
 from util.system.types cimport ui32
@@ -54,14 +55,10 @@ cdef inline TString to_arcadia_string(s) except *:
 # versions for both TStringBuf and TString are needed because of Cython's bugs that prevent conversion
 # of 'const TString&' to 'TStringBuf' in generated code
 
-ctypedef fused cpp_string_arg_type:
-    TStringBuf
-    TString
-
-cdef inline bytes to_bytes(const cpp_string_arg_type& s):
+cdef inline bytes to_bytes(const TString& s):
     return bytes(s.data()[:s.size()])
 
-cdef inline to_str(const cpp_string_arg_type& s):
+cdef inline to_str(const TString& s):
     cdef bytes bstr = to_bytes(s)
     if PY_MAJOR_VERSION >= 3:
         return bstr.decode()
@@ -79,7 +76,7 @@ ctypedef fused common_tvector_type:
     TString
 
 
-cdef tvector_to_py(const TVector[common_tvector_type]& src):
+cdef tvector_to_py(TConstArrayRef[common_tvector_type] src):
     cdef size_t i = 0
     cdef size_t src_size = src.size()
     res = []
@@ -93,13 +90,13 @@ cdef tvector_to_py(const TVector[common_tvector_type]& src):
     return res
 
 
-cdef tvector_tvector_to_py(const TVector[TVector[common_tvector_type]]& src):
+cdef tvector_tvector_to_py(TConstArrayRef[TVector[common_tvector_type]] src):
     cdef size_t i = 0
     cdef size_t src_size = src.size()
     res = []
 
     for i in xrange(src_size):
-        res.append(tvector_to_py(src[i]))
+        res.append(tvector_to_py(<TConstArrayRef[common_tvector_type]>src[i]))
 
     return res
 

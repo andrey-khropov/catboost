@@ -5227,7 +5227,7 @@ cdef class _CatBoost:
             to_arcadia_string(fspath(tmp_dir))
         )
         cdef TVector[TString] metric_names = GetMetricNames(dereference(self.__model), metricDescriptions)
-        return tvector_tvector_to_py(metrics), [to_str(name) for name in metric_names]
+        return tvector_tvector_to_py(<TConstArrayRef[TVector[double]]>metrics), [to_str(name) for name in metric_names]
 
     cpdef _get_loss_function_name(self):
         return _get_loss_function_name(dereference(self.__model))
@@ -5510,7 +5510,9 @@ cdef class _CatBoost:
         return [(node.LeftSubtreeDiff, node.RightSubtreeDiff) for node in step_nodes]
 
     cpdef _get_tree_node_to_leaf(self, tree_idx):
-        return tvector_to_py(GetTreeNodeToLeaf(dereference(self.__model), tree_idx))
+        return tvector_to_py(
+            <TConstArrayRef[ui32]>GetTreeNodeToLeaf(dereference(self.__model), tree_idx)
+        )
 
     cpdef _tune_hyperparams(self, list grids_list, _PoolBase train_pool, dict params, int n_iter,
                           int fold_count, int partition_random_seed, bool_t shuffle, bool_t stratified,
@@ -6282,7 +6284,7 @@ cpdef _eval_metric_util(
     thread_count = UpdateThreadCount(thread_count);
 
     return tvector_to_py(
-        EvalMetricsForUtils(
+        <TConstArrayRef[double]>EvalMetricsForUtils(
             <TConstArrayRef[TVector[float]]>(label),
             approx,
             to_arcadia_string(metric),

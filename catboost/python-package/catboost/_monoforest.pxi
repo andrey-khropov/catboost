@@ -134,7 +134,17 @@ cpdef explain_features(model):
     for featureExpl in featuresExplanations:
         borders = []
         for borderExpl in featureExpl.BordersExplanations:
-            borders.append(BorderExplanation(borderExpl.Border, borderExpl.ProbabilityToSatisfy, tvector_to_py(borderExpl.ExpectedValueChange)))
+            borders.append(
+                BorderExplanation(
+                    borderExpl.Border,
+                    borderExpl.ProbabilityToSatisfy,
+                    tvector_to_py(<TConstArrayRef[double]>borderExpl.ExpectedValueChange))
+            )
         feature_type = "Float" if featureExpl.FeatureType == EMonoForestFeatureType_Float else "OneHot"
-        result.append(FeatureExplanation(featureExpl.FeatureIdx, feature_type, tvector_to_py(featureExpl.ExpectedBias), borders))
+        result.append(
+            FeatureExplanation(
+                featureExpl.FeatureIdx,
+                feature_type,
+                tvector_to_py(<TConstArrayRef[double]>featureExpl.ExpectedBias), borders)
+        )
     return result
