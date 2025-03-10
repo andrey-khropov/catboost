@@ -3,10 +3,9 @@ name: Check build and tests
 on:
   push:
     branches:
-      - github_actions_debug
+      - master_1
 
   pull_request:
-
 
 jobs:
   check:
