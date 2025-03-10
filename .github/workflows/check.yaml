@@ -5,6 +5,9 @@ on:
     branches:
       - github_actions_debug
 
+  pull_request
+
+
 jobs:
   check:
     name: Check per OS
