@@ -3,7 +3,7 @@ name: Check build and tests
 on:
   push:
     branches:
-      - master_1
+      - external_cython
 
   pull_request:
 
