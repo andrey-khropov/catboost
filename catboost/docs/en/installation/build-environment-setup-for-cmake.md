@@ -51,7 +51,7 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
 
         For `aarch64` CPU archirecture the minimum version is 18.1
 
-        For other CPU architectures the minimum version is 14
+        For other CPU architectures the minimum version is 16
 
       - [`lld` linker](https://lld.llvm.org/), version 7+
 
@@ -85,7 +85,7 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
         - Microsoft Visual Studio 2022 with `clang-cl` compiler with version 14+ installed (can be selected in `Individual components` pane of the Visual Studio Installer for Visual Studio 2022). See details [here](https://learn.microsoft.com/en-us/cpp/build/clang-support-msbuild?view=msvc-170)
 
       - for builds with CUDA support:
-        - Microsoft Visual Studio 2019 or 2022 with MSVC v142 -  C++ x64/x86 build tools version v14.28 - 16.x or v14.29 - 16.x (can be selected in `Individual components` pane of the Visual Studio Installer for a paricular Visual Studio version)
+        - Microsoft Visual Studio 2019 or 2022 with MSVC v142 -  C++ x64/x86 build tools version v14.28 - 16.x or v14.29 - 16.x (can be selected in `Individual components` pane of the Visual Studio Installer for a particular Visual Studio version)
 
       For revisions before [8698718](https://github.com/catboost/catboost/commit/86987189bd2d016ea1241a98d78319c0e900b99c) builds without CUDA required Microsoft Visual Studio 2022 with `clang-cl` compiler with versions 14 - 18.
 
