@@ -285,13 +285,13 @@ jobs:
           platform_tag: manylinux2014_x86_64
           artifact_retention_days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
-        name: 'Upload artifact: source python package'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catboost-python-package-dist-src-${{ inputs.artifacts_version }}
-          path: catboost/catboost/python-package/dist/*.tar.gz
-          retention-days: ${{ inputs.artifact_retention_days }}
+      # - if: inputs.os == 'linux'
+      #   name: 'Upload artifact: source python package'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: catboost-python-package-dist-src-${{ inputs.artifacts_version }}
+      #     path: catboost/catboost/python-package/dist/*.tar.gz
+      #     retention-days: ${{ inputs.artifact_retention_days }}
 
       - if: inputs.os == 'linux'
         name: 'Upload artifact: python package visualization widget'
