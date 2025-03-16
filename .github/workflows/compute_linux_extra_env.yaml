@@ -1,16 +1,16 @@
-name: Add macOS extra python environments to cache
+name: Compute Linux aarch64 extra python environments
 
 on:
   workflow_dispatch
 
 jobs:
-  add_macos_arm64_extra_env_to_cache:
-    name: Add MacOS Arm64 extra env to cache
-    runs-on: macos-14
+  compute_linux_aarch64_extra_env:
+    name: Compute Linux Arm64 extra env
+    runs-on: ubuntu-22.04-arm
     steps:
       - name: Install pyenv and python versions and pack to zip file
         run: |
-          brew install pyenv
+          curl -fsSL https://pyenv.run | bash
 
           pyenv install 3.8.18
           cd $HOME/.pyenv/versions/ && ln -s 3.8.18 ./3.8
@@ -36,17 +36,10 @@ jobs:
               python -m pip install -U pip numpy
           done
 
-          cd $HOME/.pyenv/versions/ && zip -r -y ${{ github.workspace }}/python_versions_macos_arm64.zip *
+          cd $HOME/.pyenv/versions/ && zip -r -y ${{ github.workspace }}/python_versions_linux_aarch64.zip *
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: python_versions_macos_arm64-${{ github.run_id }}
-          path: python_versions_macos_arm64.zip
-
-      - name: Save to cache
-        uses: actions/cache/save@v4
-        with:
-          enableCrossOsArchive: true # to be used on macOS x86_64 as well
-          path: python_versions_macos_arm64.zip
-          key: python_versions_macos_arm64-${{ github.run_id }} # Can use time based key as well
+          name: python_versions_linux_aarch64-${{ github.run_id }}
+          path: python_versions_linux_aarch64.zip
