@@ -10,6 +10,9 @@ jobs:
     steps:
       - name: Install pyenv and python versions and pack to zip file
         run: |
+          sudo apt-get update
+          sudo apt-get install -y libbz2-dev libreadline-dev libssl-dev libsqlite3-dev liblzma-dev
+
           curl -fsSL https://pyenv.run | bash
 
           export PYENV_ROOT="$HOME/.pyenv"
