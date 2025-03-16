@@ -7,8 +7,6 @@ on:
 
   pull_request:
 
-  pull_request:
-
 jobs:
   check:
     name: Check per OS
