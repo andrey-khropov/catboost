@@ -7,15 +7,12 @@ on:
 
   pull_request:
 
-  pull_request:
-
-
 jobs:
   check:
     name: Check per OS
     strategy:
       matrix:
-        os: [linux]
+        os: [linux, macos, windows]
       fail-fast: false
     with:
       os: ${{ matrix.os }}
