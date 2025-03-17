@@ -1,0 +1,111 @@
+name: Debug check
+
+on:
+  push:
+    branches:
+      - numpy_2
+
+  pull_request:
+
+jobs:
+  check:
+    name: Check per OS
+    strategy:
+      matrix:
+        runs-on: ["macos-13", "windows-2022"]
+      fail-fast: false
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - if: matrix.runs-on == 'macos-13'
+        name: Env setup on macOS
+        run: |
+          python3 -m pip install -U conan==2.4.1 setuptools wheel jupyterlab==3.0.6 build
+
+          #brew update
+          #brew install ninja
+
+          #npm install --global rimraf
+
+          export CMAKE_BUILD_ENV_ROOT=${{ github.workspace }}/cmake_build_env_root
+
+          mkdir -p $CMAKE_BUILD_ENV_ROOT/darwin-x86_64
+
+          # JDK
+          #cd $CMAKE_BUILD_ENV_ROOT/darwin-x86_64
+          #mkdir -p Library/Java/JavaVirtualMachines
+          #cd Library/Java/JavaVirtualMachines
+          #ln -s /Library/Java/JavaVirtualMachines/Temurin-Hotspot-8.jdk ./jdk-8
+
+          # Python
+          cd $CMAKE_BUILD_ENV_ROOT/darwin-x86_64
+          mkdir -p Python
+          cd Python
+          ln -s $RUNNER_TOOL_CACHE/Python/3.8.*/x64 ./3.8
+          ln -s $RUNNER_TOOL_CACHE/Python/3.9.*/x64 ./3.9
+          ln -s $RUNNER_TOOL_CACHE/Python/3.10.*/x64 ./3.10
+          ln -s $RUNNER_TOOL_CACHE/Python/3.11.*/x64 ./3.11
+          ln -s $RUNNER_TOOL_CACHE/Python/3.12.*/x64 ./3.12
+          ln -s $RUNNER_TOOL_CACHE/Python/3.13.*/x64 ./3.13
+
+          for PY_VER in 3.8 3.9 3.10 3.11 3.12 3.13
+          do
+              $CMAKE_BUILD_ENV_ROOT/darwin-x86_64/Python/$PY_VER/bin/python -m pip install --upgrade pip setuptools wheel numpy cython==3.0.12
+              $CMAKE_BUILD_ENV_ROOT/darwin-x86_64/Python/$PY_VER/bin/cython --version
+          done
+
+          #mkdir -p $CMAKE_BUILD_ENV_ROOT/darwin-arm64
+
+          # JDK
+          #cd $CMAKE_BUILD_ENV_ROOT/darwin-arm64
+          #mkdir -p Library/Java/JavaVirtualMachines
+          #cd Library/Java/JavaVirtualMachines
+          #wget https://cdn.azul.com/zulu/bin/zulu8.78.0.19-ca-jdk8.0.412-macosx_aarch64.tar.gz
+          #tar xzvf zulu8.78.0.19-ca-jdk8.0.412-macosx_aarch64.tar.gz
+          #ln -s ./zulu8.78.0.19-ca-jdk8.0.412-macosx_aarch64/zulu-8.jdk ./jdk-8
+
+          # Python
+          #cd $CMAKE_BUILD_ENV_ROOT/darwin-arm64
+          #mkdir -p Python
+          #cd Python
+          #unzip ${{ github.workspace }}/python_versions_macos_arm64
+
+      # Python 3.13 is not included in the standard 'windows-2022' image yet.
+      # Should be available soon: https://github.com/actions/runner-images/pull/11438
+      - if: matrix.runs-on == 'windows-2022'
+        name: Install python3.13 on Windows
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - if: matrix.runs-on == 'windows-2022'
+        name: Env setup on Windows
+        run: |
+          python -m pip install -U conan==2.4.1 setuptools wheel jupyterlab==3.0.6 build
+
+          #choco install ninja
+
+          #npm install --global rimraf
+
+          $CMAKE_BUILD_ENV_ROOT="${{ github.workspace }}\cmake_build_env_root"
+
+          New-Item $CMAKE_BUILD_ENV_ROOT\windows-x86_64 -ItemType Directory
+
+          # JDK
+          #Set-Location -Path $CMAKE_BUILD_ENV_ROOT\windows-x86_64
+          #New-Item -Path .\jdk-8 -ItemType SymbolicLink -Value $Env:JAVA_HOME_8_X64
+
+          # Python
+          Set-Location -Path $CMAKE_BUILD_ENV_ROOT\windows-x86_64
+          New-Item -Path Python -ItemType Directory
+          Set-Location -Path .\Python
+          New-Item -Path .\3.8 -ItemType SymbolicLink -Value "$Env:RUNNER_TOOL_CACHE\Python\3.8.*\x64"
+          New-Item -Path .\3.9 -ItemType SymbolicLink -Value "$Env:RUNNER_TOOL_CACHE\Python\3.9.*\x64"
+          New-Item -Path .\3.10 -ItemType SymbolicLink -Value "$Env:RUNNER_TOOL_CACHE\Python\3.10.*\x64"
+          New-Item -Path .\3.11 -ItemType SymbolicLink -Value "$Env:RUNNER_TOOL_CACHE\Python\3.11.*\x64"
+          New-Item -Path .\3.12 -ItemType SymbolicLink -Value "$Env:RUNNER_TOOL_CACHE\Python\3.12.*\x64"
+          New-Item -Path .\3.13 -ItemType SymbolicLink -Value "$Env:RUNNER_TOOL_CACHE\Python\3.13.*\x64"
+
+          foreach($PY_VER in '3.8','3.9','3.10','3.11','3.12','3.13') {
+            & "$CMAKE_BUILD_ENV_ROOT\windows-x86_64\Python\$PY_VER\python.exe" -m pip install --upgrade pip setuptools wheel numpy cython==3.0.12
+            & "$CMAKE_BUILD_ENV_ROOT\windows-x86_64\Python\$PY_VER\Scripts\cython.exe" --version
+          }
