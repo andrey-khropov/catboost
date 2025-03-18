@@ -110,7 +110,7 @@ jobs:
         name: Download python package for Ubuntu
         uses: actions/download-artifact@v4
         with:
-          name: catboost-python-package-dist-cp312-cp312-manylinux2014_${{ inputs.machine }}-${{ inputs.artifacts_version }}
+          name: catboost-python-package-dist-cp${{ replace(inputs.python_version, '.', '') }}-cp${{ replace(inputs.python_version, '.', '') }}-manylinux2014_${{ inputs.machine }}-${{ inputs.artifacts_version }}
           path: catboost_python_package_dist/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
@@ -120,7 +120,7 @@ jobs:
         name: Download python package for macOS
         uses: actions/download-artifact@v4
         with:
-          name: catboost-python-package-dist-cp312-cp312-macosx_11_0_universal2-${{ inputs.artifacts_version }}
+          name: catboost-python-package-dist-cp${{ replace(inputs.python_version, '.', '') }}-cp${{ replace(inputs.python_version, '.', '') }}-macosx_11_0_universal2-${{ inputs.artifacts_version }}
           path: catboost_python_package_dist/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
@@ -130,7 +130,7 @@ jobs:
         name: Download python package for Windows
         uses: actions/download-artifact@v4
         with:
-          name: catboost-python-package-dist-cp312-cp312-win_amd64-${{ inputs.artifacts_version }}
+          name: catboost-python-package-dist-cp${{ replace(inputs.python_version, '.', '') }}-cp${{ replace(inputs.python_version, '.', '') }}-win_amd64-${{ inputs.artifacts_version }}
           path: catboost_python_package_dist/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
