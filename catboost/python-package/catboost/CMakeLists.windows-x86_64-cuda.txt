@@ -13,6 +13,10 @@
 # changes in this file.
 
 find_package(Python3 REQUIRED COMPONENTS
+  Development NumPy
+)
+
+find_package(Python3 REQUIRED COMPONENTS
   Development
 )
 
@@ -52,7 +56,7 @@ target_link_libraries(_catboost PUBLIC
   private-libs-options
   private-libs-quantized_pool_analysis
   private-libs-target
-  python-numpy-include
+  #python-numpy-include
   library-cpp-grid_creator
   cpp-json-writer
   cpp-text_processing-tokenizer
@@ -91,8 +95,8 @@ target_cython_options(_catboost
 target_cython_include_directories(_catboost
   ${PROJECT_BINARY_DIR}
   ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/contrib/python/numpy/include/numpy/core/include
-  ${PROJECT_SOURCE_DIR}/contrib/python/numpy/include/numpy/core/include/numpy
+  #${PROJECT_SOURCE_DIR}/contrib/python/numpy/include/numpy/core/include
+  #${PROJECT_SOURCE_DIR}/contrib/python/numpy/include/numpy/core/include/numpy
 )
 
 set_python_type_for_cython(_catboost
@@ -105,4 +109,12 @@ vcs_info(_catboost)
 # TODO: remove after final switch to Cython 3.x+
 target_compile_options(_catboost PRIVATE
   "-DCYTHON_EXTERN_C=extern \"C\""
+)
+
+target_include_directories(_catboost PRIVATE
+  ${Python3_NumPy_INCLUDE_DIRS}
+)
+
+target_cython_include_directories(_catboost
+  ${Python3_NumPy_INCLUDE_DIRS}
 )

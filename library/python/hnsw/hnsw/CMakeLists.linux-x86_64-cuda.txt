@@ -13,6 +13,10 @@
 # changes in this file.
 
 find_package(Python3 REQUIRED COMPONENTS
+  Development NumPy
+)
+
+find_package(Python3 REQUIRED COMPONENTS
   Development
 )
 
@@ -28,7 +32,7 @@ target_link_libraries(_hnsw PUBLIC
   contrib-libs-cxxsupp
   yutil
   Python3::Module
-  python-numpy-include
+  #python-numpy-include
   cpp-hnsw-helpers
   cpp-hnsw-index
   cpp-hnsw-index_builder
@@ -75,8 +79,8 @@ target_cython_options(_hnsw
 target_cython_include_directories(_hnsw
   ${PROJECT_BINARY_DIR}
   ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/contrib/python/numpy/include/numpy/core/include
-  ${PROJECT_SOURCE_DIR}/contrib/python/numpy/include/numpy/core/include/numpy
+  #${PROJECT_SOURCE_DIR}/contrib/python/numpy/include/numpy/core/include
+  #${PROJECT_SOURCE_DIR}/contrib/python/numpy/include/numpy/core/include/numpy
 )
 
 set_python_type_for_cython(_hnsw
@@ -84,3 +88,11 @@ set_python_type_for_cython(_hnsw
 )
 
 vcs_info(_hnsw)
+
+target_include_directories(_hnsw PRIVATE
+  ${Python3_NumPy_INCLUDE_DIRS}
+)
+
+target_cython_include_directories(_hnsw
+  ${Python3_NumPy_INCLUDE_DIRS}
+)
