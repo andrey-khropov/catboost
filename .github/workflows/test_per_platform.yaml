@@ -31,6 +31,17 @@ on:
         type: string
         default: catboost_dev
 
+env:
+  py_version_to_platform_subspec: |
+    {
+      "3.8": "cp38-cp38",
+      "3.9": "cp39-cp39",
+      "3.10": "cp310-cp310",
+      "3.11": "cp311-cp311",
+      "3.12": "cp312-cp312",
+      "3.13": "cp313-cp313"
+    }
+
 jobs:
   test:
     runs-on: ${{ inputs.runs-on_value }}
@@ -110,7 +121,7 @@ jobs:
         name: Download python package for Ubuntu
         uses: actions/download-artifact@v4
         with:
-          name: catboost-python-package-dist-cp${{ replace(inputs.python_version, '.', '') }}-cp${{ replace(inputs.python_version, '.', '') }}-manylinux2014_${{ inputs.machine }}-${{ inputs.artifacts_version }}
+          name: catboost-python-package-dist-${{ fromJSON(env.py_version_to_platform_subspec)[inputs.python_version] }}-manylinux2014_${{ inputs.machine }}-${{ inputs.artifacts_version }}
           path: catboost_python_package_dist/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
@@ -120,7 +131,7 @@ jobs:
         name: Download python package for macOS
         uses: actions/download-artifact@v4
         with:
-          name: catboost-python-package-dist-cp${{ replace(inputs.python_version, '.', '') }}-cp${{ replace(inputs.python_version, '.', '') }}-macosx_11_0_universal2-${{ inputs.artifacts_version }}
+          name: catboost-python-package-dist-${{ fromJSON(env.py_version_to_platform_subspec)[inputs.python_version] }}-macosx_11_0_universal2-${{ inputs.artifacts_version }}
           path: catboost_python_package_dist/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
@@ -130,7 +141,7 @@ jobs:
         name: Download python package for Windows
         uses: actions/download-artifact@v4
         with:
-          name: catboost-python-package-dist-cp${{ replace(inputs.python_version, '.', '') }}-cp${{ replace(inputs.python_version, '.', '') }}-win_amd64-${{ inputs.artifacts_version }}
+          name: catboost-python-package-dist-${{ fromJSON(env.py_version_to_platform_subspec)[inputs.python_version] }}-win_amd64-${{ inputs.artifacts_version }}
           path: catboost_python_package_dist/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
