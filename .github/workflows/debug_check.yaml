@@ -3,7 +3,7 @@ name: Debug check
 on:
   push:
     branches:
-      - numpy_2
+      - numpy_2_disable
 
   pull_request:
 
