@@ -1,6 +1,6 @@
-if (NOT USE_INTERNAL_CYTHON)
-  include(FindCython)
-endif()
+#if (NOT USE_INTERNAL_CYTHON)
+#  #include(FindCython)
+#endif()
 
 
 function(target_cython_include_directories Tgt)
