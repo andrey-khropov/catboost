@@ -95,7 +95,9 @@ def setup_hnsw_submodule(argv, extensions):
 
 
 def get_setup_requires(argv):
-    setup_requires = ['wheel', 'cython']
+    # numpy definitions for cython have been moved from cython itself to numpy so now numpy is required for setup as well
+    # https://github.com/cython/cython/issues/6249#issuecomment-2176633822
+    setup_requires = ['wheel', 'cython >= 3', 'numpy']
     if ('build_widget' in argv) or (not ('--no-widget' in argv)):
         setup_requires += ['jupyterlab (>=3.0.6, <3.6.0)']
     return setup_requires
@@ -772,7 +774,7 @@ if __name__ == '__main__':
         install_requires=[
             'graphviz',
             'matplotlib',
-            'numpy (>=1.16.0, <2.0)',
+            'numpy (>=1.16.0)',
             'pandas (>=0.24)',
             'scipy',
             'plotly',
