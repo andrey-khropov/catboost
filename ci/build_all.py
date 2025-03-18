@@ -419,16 +419,15 @@ def build_all_for_one_platform(
     def get_relative_python_dev_paths(py_ver: Tuple[int, int]) -> build_native.PythonDevPaths:
         # returns paths relative to CMAKE_FIND_ROOT_PATH
 
-        python_sub_name = f'python{py_ver[0]}.{py_ver[1]}'
-
         if sys.platform == 'win32':
             sub_paths = build_native.PythonDevPaths(
                 'include',
-                os.path.join('libs', f'{python_sub_name}.lib'),
+                os.path.join('libs', f'python{py_ver[0]}{py_ver[1]}.lib'),
                 # numpy include path, numpy 2.x uses '_core' and numpy 1.x uses 'core'
                 os.path.join('Lib', 'site-packages', 'numpy', 'core' if py_ver == (3,8) else '_core', 'include')
             )
         else:
+            python_sub_name = f'python{py_ver[0]}.{py_ver[1]}'
             if sys.platform == 'darwin':
                 lib_sub_path = os.path.join('lib', python_sub_name, f'config-{py_ver[0]}.{py_ver[1]}-darwin')
             elif sys.platform == 'linux':
