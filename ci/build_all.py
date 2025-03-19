@@ -460,7 +460,14 @@ def build_all_for_one_platform(
 
     build_with_cuda_for_main_targets = need_to_build_with_cuda_for_main_targets(platform_name)
 
-    default_cmake_extra_args = [f'-DJAVA_HOME={JAVA_HOME}']
+    default_cmake_extra_args = [
+        f'-DJAVA_HOME={JAVA_HOME}',
+        # We have to pass Python3_EXECUTABLE explicitly because FindPython3 module logic wants an Interpreter component
+        # if NumPy component is specified and default logic often fails, especially when cross-compiling.
+        # Also, keep it the same as the current executable to avoid rebuilding targets that require a Python interpeter
+        # when we change Development and Numpy parts for different Python versions
+        f'-DPython3_EXECUTABLE={sys.executable}',
+    ]
     if cmake_extra_args is not None:
         default_cmake_extra_args += cmake_extra_args
 
@@ -593,21 +600,18 @@ def build_all_for_one_platform(
     for py_ver in PYTHON_VERSIONS:
         relative_python_dev_paths = get_relative_python_dev_paths(py_ver)
         if macos_universal_binaries:
-            platform_names = ['darwin-x86_64', 'darwin-arm64']
+            platform_names_for_python_dev_paths = ['darwin-x86_64', 'darwin-arm64']
         else:
-            platform_names = [platform_name]
+            platform_names_for_python_dev_paths = [platform_name]
 
         cmake_platform_to_python_dev_paths = dict(
             (
                 platform_name,
                 relative_python_dev_paths.prepend_paths(os.path.join(CMAKE_BUILD_ENV_ROOT, platform_name))
             )
-            for platform_name in platform_names
+            for platform_name in platform_names_for_python_dev_paths
         )
         cmake_extra_args=[
-            # we have to pass Python3_EXECUTABLE explicitly because FindPython3 module logic wants an Interpreter component
-            # if NumPy component is specified and default logic often fails, especially when cross-compiling
-            f'-DPython3_EXECUTABLE={get_native_python_executable(py_ver)}',
             # select Python-version specific Cython installation because it will get NumPy information from it's interpreter
             '-UCYTHON_*',
             f'-DCython_ROOT={os.path.join(CMAKE_BUILD_ENV_ROOT, get_native_platform_name(), get_cython_bin_dir(py_ver))}'
