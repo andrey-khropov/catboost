@@ -301,7 +301,7 @@ jobs:
           path: catboost/catboost/python-package/build/widget
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: R package for Linux x86_64'
         uses: actions/upload-artifact@v4
         with:
@@ -309,7 +309,7 @@ jobs:
           path: catboost/catboost/R-package/catboost-R-linux-x86_64.tgz
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: R package for Linux aarch64'
         uses: actions/upload-artifact@v4
         with:
@@ -317,7 +317,7 @@ jobs:
           path: catboost/catboost/R-package/catboost-R-linux-aarch64.tgz
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: catboostmodel library for Linux x86_64'
         uses: actions/upload-artifact@v4
         with:
@@ -325,7 +325,7 @@ jobs:
           path: catboost/build_native_root/have_cuda/linux-x86_64/catboost/libs/model_interface/libcatboostmodel.*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: catboostmodel library for Linux aarch64'
         uses: actions/upload-artifact@v4
         with:
@@ -333,7 +333,8 @@ jobs:
           path: catboost/build_native_root/have_cuda/linux-aarch64/catboost/libs/model_interface/libcatboostmodel.*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - name: 'Upload artifact: catboost4j-spark-impl-sources'
+      - if: false
+        name: 'Upload artifact: catboost4j-spark-impl-sources'
         uses: actions/upload-artifact@v4
         with:
           name: catboost4j-spark-impl-sources-${{ inputs.artifacts_version }}
@@ -341,7 +342,8 @@ jobs:
           retention-days: ${{ inputs.artifact_retention_days }}
           overwrite: true
 
-      - name: 'Upload artifact: catboost4j-spark_core_resources_classes'
+      - if: false
+        name: 'Upload artifact: catboost4j-spark_core_resources_classes'
         uses: actions/upload-artifact@v4
         with:
           name: catboost4j-spark_core_resources_classes-${{ inputs.artifacts_version }}
@@ -349,7 +351,7 @@ jobs:
           retention-days: ${{ inputs.artifact_retention_days }}
           overwrite: true
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: catboost4j-spark_core_resources-linux'
         uses: actions/upload-artifact@v4
         with:
@@ -357,7 +359,7 @@ jobs:
           path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/linux*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: catboost4j-prediction_resources-linux'
         uses: actions/upload-artifact@v4
         with:
@@ -404,7 +406,7 @@ jobs:
           platform_tag: macosx_11_0_universal2
           artifact_retention_days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'macos'
+      - if: false #inputs.os == 'macos'
         name: 'Upload artifact: R package for macOS universal2'
         uses: actions/upload-artifact@v4
         with:
@@ -412,7 +414,7 @@ jobs:
           path: catboost/catboost/R-package/catboost-R-darwin-universal2.tgz
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'macos'
+      - if: false #inputs.os == 'macos'
         name: 'Upload artifact: catboostmodel library for macOS universal2'
         uses: actions/upload-artifact@v4
         with:
@@ -420,7 +422,7 @@ jobs:
           path: catboost/build_native_root/no_cuda/darwin-universal2/catboost/libs/model_interface/libcatboostmodel.*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'macos'
+      - if: false #inputs.os == 'macos'
         name: 'Upload artifact: catboost4j-spark_core_resources-darwin'
         uses: actions/upload-artifact@v4
         with:
@@ -428,7 +430,7 @@ jobs:
           path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/darwin*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'macos'
+      - if: false #inputs.os == 'macos'
         name: 'Upload artifact: catboost4j-prediction_resources-darwin'
         uses: actions/upload-artifact@v4
         with:
@@ -464,7 +466,7 @@ jobs:
           platform_tag: win_amd64
           artifact_retention_days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'windows'
+      - if: false #inputs.os == 'windows'
         name: 'Upload artifact: R package for Windows x86_64'
         uses: actions/upload-artifact@v4
         with:
@@ -472,7 +474,7 @@ jobs:
           path: catboost/catboost/R-package/catboost-R-windows-x86_64.tgz
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'windows'
+      - if: false #inputs.os == 'windows'
         name: 'Upload artifact: catboostmodel library for Windows x86_64'
         uses: actions/upload-artifact@v4
         with:
@@ -482,7 +484,7 @@ jobs:
             catboost/build_native_root/have_cuda/windows-x86_64/catboost/libs/model_interface/catboostmodel.lib
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'windows'
+      - if: false #inputs.os == 'windows'
         name: 'Upload artifact: catboost4j-spark_core_resources-windows'
         uses: actions/upload-artifact@v4
         with:
@@ -490,7 +492,7 @@ jobs:
           path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/win*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'windows'
+      - if: false #inputs.os == 'windows'
         name: 'Upload artifact: catboost4j-prediction_resources-windows'
         uses: actions/upload-artifact@v4
         with:
