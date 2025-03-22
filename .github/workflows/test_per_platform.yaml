@@ -257,6 +257,7 @@ jobs:
           python -m pytest -n auto
 
       - name: Run python package tests with numpy 1
+        if: inputs.python_version != '3.13'
         shell: pwsh
         run: |
           python -m pip install testpath pytest 'numpy<2.0' pandas ipywidgets scikit-learn
