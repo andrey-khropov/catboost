@@ -24,7 +24,7 @@ jobs:
     name: Test per OS
     strategy:
       matrix:
-         os: [macos]
+         os: [linux, macos, windows]
       fail-fast: false
     with:
       os: ${{ matrix.os }}
