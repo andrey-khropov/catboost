@@ -667,7 +667,7 @@ def build_all(
             verbose,
             [
                 ['python3', 'setup.py', 'build_widget'],
-                #['python3', '-m', 'build', '--sdist']
+                ['python3', '-m', 'build', '--sdist']
             ]
         )
 
