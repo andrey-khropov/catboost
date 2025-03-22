@@ -99,7 +99,7 @@ def get_setup_requires(argv):
 
     # numpy definitions for cython have been moved from cython itself to numpy so now numpy is required for setup as well
     # https://github.com/cython/cython/issues/6249#issuecomment-2176633822
-    if sys.version_info <= (3, 8):
+    if sys.version_info < (3, 9):
         setup_requires += ['cython', 'numpy']
     else:
         # Numpy 2.x is compatible only with Python 3.9+ and packages built with numpy 2.x will work with numpy 1.x as well
