@@ -3,7 +3,7 @@ name: Check build and tests
 on:
   push:
     branches:
-      - numpy_2_disable
+      - numpy_2
 
   pull_request:
 
