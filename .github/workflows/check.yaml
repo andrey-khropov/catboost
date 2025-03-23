@@ -3,17 +3,19 @@ name: Check build and tests
 on:
   push:
     branches:
-      - master
+      - master_1
+
+  pull_request:
 
 jobs:
   check:
     name: Check per OS
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-13, windows-2022]
+        os: [linux]
       fail-fast: false
     with:
-      runs-on_value: ${{ matrix.os }}
+      os: ${{ matrix.os }}
       artifacts_version: ${{ github.sha }}
       catboost_package_version: 1.2.7
     uses: ./.github/workflows/check_per_os.yaml

@@ -227,7 +227,7 @@ constexpr Y_FORCE_INLINE int Y_UNUSED(Types&&...) {
  * }
  *
  * // we know that xs and ys are non-negative from domain knowledge,
- * // but we can't change the types of xs and ys because of API constrains
+ * // but we can't change the types of xs and ys because of API constraints
  * int Foo(const TVector<int>& xs, const TVector<int>& ys) {
  *     TVector<int> avgs;
  *     avgs.resize(xs.size());
@@ -715,4 +715,23 @@ Y_FORCE_INLINE void DoNotOptimizeAway(const T&) = delete;
     #define Y_RETURNS_NONNULL __attribute__((returns_nonnull))
 #else
     #define Y_RETURNS_NONNULL
+#endif
+
+/**
+ * @def Y_NONNULL
+ *
+ * The nonnull attribute indicates that some function parameters must not be null.
+ *
+ * @see
+ *    GCC: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-nonnull-function-attribute
+ *    Clang: https://clang.llvm.org/docs/AttributeReference.html#id15
+ *
+ * @code
+ * void func(char* Y_NONNULL arr, size_t len);
+ * @endcode
+ */
+#if Y_HAVE_ATTRIBUTE(nonnull)
+    #define Y_NONNULL __attribute__((nonnull))
+#else
+    #define Y_NONNULL
 #endif
