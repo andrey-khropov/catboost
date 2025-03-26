@@ -194,6 +194,8 @@ namespace {
         }
 
         inline void* Join() {
+            Y_ENSURE(H_, "Attempt to Join non-started thread");
+
             void* tec = nullptr;
             PCHECK(pthread_join(H_, &tec), "can not join thread");
 
