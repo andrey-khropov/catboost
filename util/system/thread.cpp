@@ -232,6 +232,7 @@ namespace {
                     P_.Reset(holdP);
                     PCHECK(err, "failed to create thread");
                 }
+                Y_ENSURE(H_, "pthread_create returned thread id = 0");
             }
         }
 
