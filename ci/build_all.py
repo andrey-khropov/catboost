@@ -35,12 +35,12 @@ from typing import List, Tuple
 IS_IN_GITHUB_ACTION = 'GITHUB_ACTION' in os.environ
 
 PYTHON_VERSIONS = [
-    (3,8),
-    (3,9),
-    (3,10),
-    (3,11),
+    #(3,8),
+    #(3,9),
+    #(3,10),
+    #(3,11),
     (3,12),
-    (3,13)
+    #(3,13)
 ]
 
 MSVS_VERSION = '2022'
@@ -455,7 +455,7 @@ def build_all_for_one_platform(
     # exclude python-dependent targets that will be built for concrete python
     # and SWIG (which is always w/o CUDA) and includes JVM-only 'catboost4j-spark-impl'
     all_catboost_targets_except_python_and_spark=[
-        target for target in build_native.Targets.catboost.keys()
+        target for target in ['catboost'] #build_native.Targets.catboost.keys()
         if target not in ['_hnsw', '_catboost', 'catboost4j-spark-impl', 'catboost4j-spark-impl-cpp']
     ]
 
@@ -546,7 +546,7 @@ def build_all_for_one_platform(
             macos_universal_binaries=False
         )
 
-    targets_wo_cuda = ['catboost4j-spark-impl-cpp']
+    targets_wo_cuda = [] #'catboost4j-spark-impl-cpp']
     if build_test_tools:
         targets_wo_cuda += build_native.Targets.test_tools.keys()
 
@@ -576,25 +576,25 @@ def build_all_for_one_platform(
             verbose=verbose
         )
 
-    if not only_native_artifacts:
-        build_r_package(
-            src_root_dir,
-            build_native_root_dir,
-            build_with_cuda_for_main_targets,
-            platform_name,
-            dry_run,
-            verbose
-        )
+    # if not only_native_artifacts:
+    #     build_r_package(
+    #         src_root_dir,
+    #         build_native_root_dir,
+    #         build_with_cuda_for_main_targets,
+    #         platform_name,
+    #         dry_run,
+    #         verbose
+    #     )
 
-        build_jvm_artifacts(
-            src_root_dir,
-            build_native_root_dir,
-            platform_name,
-            macos_universal_binaries,
-            build_with_cuda_for_main_targets,
-            dry_run,
-            verbose
-        )
+    #     build_jvm_artifacts(
+    #         src_root_dir,
+    #         build_native_root_dir,
+    #         platform_name,
+    #         macos_universal_binaries,
+    #         build_with_cuda_for_main_targets,
+    #         dry_run,
+    #         verbose
+    #     )
 
     # build python version-specific dynamic libraries and wheels (the latter only if not 'only_native_artifacts').
     # Note: assumes build_widget has already been called
@@ -667,8 +667,8 @@ def build_all(
             dry_run,
             verbose,
             [
-                ['python3', 'setup.py', 'build_widget'],
-                ['python3', '-m', 'build', '--sdist']
+                #['python3', 'setup.py', 'build_widget'],
+                #['python3', '-m', 'build', '--sdist']
             ]
         )
 
@@ -698,33 +698,33 @@ def build_all(
         verbose=verbose
     )
 
-    if platform_name.startswith('linux'):
-        platform_java_home = os.path.join(CMAKE_BUILD_ENV_ROOT, 'linux-aarch64', JAVA_HOME[1:])
+    # if platform_name.startswith('linux'):
+    #     platform_java_home = os.path.join(CMAKE_BUILD_ENV_ROOT, 'linux-aarch64', JAVA_HOME[1:])
 
-        # build for aarch64 as well
-        build_all_for_one_platform(
-            src_root_dir=src_root_dir,
-            built_output_root_dir=build_native_root_dir,
-            platform_name='linux-aarch64',
-            cmake_target_toolchain=os.path.join(src_root_dir, 'ci', 'toolchains', 'dockcross.manylinux2014_aarch64.clangs.toolchain'),
-            conan_build_profile=conan_build_profile,
-            conan_host_profile=os.path.join(src_root_dir, 'ci', 'conan', 'profiles', 'dockcross.manylinux2014_aarch64.profile'),
-            build_test_tools=build_test_tools,
-            only_native_artifacts=only_native_artifacts,
-            dry_run=dry_run,
-            verbose=verbose,
-            native_built_tools_root_dir=os.path.join(
-                get_real_build_root_dir(src_root_dir, build_native_root_dir),
-                'no_cuda',
-                'linux-x86_64'
-            ),
+    #     # build for aarch64 as well
+    #     build_all_for_one_platform(
+    #         src_root_dir=src_root_dir,
+    #         built_output_root_dir=build_native_root_dir,
+    #         platform_name='linux-aarch64',
+    #         cmake_target_toolchain=os.path.join(src_root_dir, 'ci', 'toolchains', 'dockcross.manylinux2014_aarch64.clangs.toolchain'),
+    #         conan_build_profile=conan_build_profile,
+    #         conan_host_profile=os.path.join(src_root_dir, 'ci', 'conan', 'profiles', 'dockcross.manylinux2014_aarch64.profile'),
+    #         build_test_tools=build_test_tools,
+    #         only_native_artifacts=only_native_artifacts,
+    #         dry_run=dry_run,
+    #         verbose=verbose,
+    #         native_built_tools_root_dir=os.path.join(
+    #             get_real_build_root_dir(src_root_dir, build_native_root_dir),
+    #             'no_cuda',
+    #             'linux-x86_64'
+    #         ),
 
-            # for some reason CMake can't find JDK libraries in Adoptium's standard path so we have to specify them explicitly
-            cmake_extra_args=[
-                f'-DJAVA_AWT_LIBRARY={os.path.join(platform_java_home, "lib/aarch64/libjawt.so")}',
-                f'-DJAVA_JVM_LIBRARY={os.path.join(platform_java_home, "jre/lib/aarch64/server/libjvm.so")}'
-            ]
-        )
+    #         # for some reason CMake can't find JDK libraries in Adoptium's standard path so we have to specify them explicitly
+    #         cmake_extra_args=[
+    #             f'-DJAVA_AWT_LIBRARY={os.path.join(platform_java_home, "lib/aarch64/libjawt.so")}',
+    #             f'-DJAVA_JVM_LIBRARY={os.path.join(platform_java_home, "jre/lib/aarch64/server/libjvm.so")}'
+    #         ]
+    #     )
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

@@ -3,7 +3,7 @@ name: Check build and tests
 on:
   push:
     branches:
-      - master_1
+      - resource_deadlock_avoided_debug
 
   pull_request:
 
@@ -12,7 +12,7 @@ jobs:
     name: Check per OS
     strategy:
       matrix:
-        os: [linux, macos, windows]
+        os: [linux]
       fail-fast: false
     with:
       os: ${{ matrix.os }}

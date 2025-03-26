@@ -259,7 +259,7 @@ jobs:
           path: catboost/build_native_root/have_cuda/linux-x86_64/catboost/app/catboost
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: CLI for Linux aarch64'
         uses: actions/upload-artifact@v4
         with:
@@ -267,7 +267,7 @@ jobs:
           path: catboost/build_native_root/have_cuda/linux-aarch64/catboost/app/catboost
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifacts: python packages for Linux aarch64'
         uses: ./catboost/.github/actions/upload_python_package_artifacts_for_all_py_versions
         with:
@@ -285,7 +285,7 @@ jobs:
           platform_tag: manylinux2014_x86_64
           artifact_retention_days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: source python package'
         uses: actions/upload-artifact@v4
         with:
@@ -293,7 +293,7 @@ jobs:
           path: catboost/catboost/python-package/dist/*.tar.gz
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: python package visualization widget'
         uses: actions/upload-artifact@v4
         with:
@@ -301,7 +301,7 @@ jobs:
           path: catboost/catboost/python-package/build/widget
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: R package for Linux x86_64'
         uses: actions/upload-artifact@v4
         with:
@@ -309,7 +309,7 @@ jobs:
           path: catboost/catboost/R-package/catboost-R-linux-x86_64.tgz
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: R package for Linux aarch64'
         uses: actions/upload-artifact@v4
         with:
@@ -317,7 +317,7 @@ jobs:
           path: catboost/catboost/R-package/catboost-R-linux-aarch64.tgz
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: catboostmodel library for Linux x86_64'
         uses: actions/upload-artifact@v4
         with:
@@ -325,7 +325,7 @@ jobs:
           path: catboost/build_native_root/have_cuda/linux-x86_64/catboost/libs/model_interface/libcatboostmodel.*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: catboostmodel library for Linux aarch64'
         uses: actions/upload-artifact@v4
         with:
@@ -333,7 +333,7 @@ jobs:
           path: catboost/build_native_root/have_cuda/linux-aarch64/catboost/libs/model_interface/libcatboostmodel.*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - name: 'Upload artifact: catboost4j-spark-impl-sources'
+      - name: false #'Upload artifact: catboost4j-spark-impl-sources'
         uses: actions/upload-artifact@v4
         with:
           name: catboost4j-spark-impl-sources-${{ inputs.artifacts_version }}
@@ -341,7 +341,7 @@ jobs:
           retention-days: ${{ inputs.artifact_retention_days }}
           overwrite: true
 
-      - name: 'Upload artifact: catboost4j-spark_core_resources_classes'
+      - name: false #'Upload artifact: catboost4j-spark_core_resources_classes'
         uses: actions/upload-artifact@v4
         with:
           name: catboost4j-spark_core_resources_classes-${{ inputs.artifacts_version }}
@@ -349,7 +349,7 @@ jobs:
           retention-days: ${{ inputs.artifact_retention_days }}
           overwrite: true
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: catboost4j-spark_core_resources-linux'
         uses: actions/upload-artifact@v4
         with:
@@ -357,7 +357,7 @@ jobs:
           path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/linux*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: catboost4j-prediction_resources-linux'
         uses: actions/upload-artifact@v4
         with:
@@ -376,7 +376,7 @@ jobs:
             catboost/build_native_root/no_cuda/linux-x86_64/catboost/tools/model_comparator/model_comparator
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'linux'
+      - if: false #inputs.os == 'linux'
         name: 'Upload artifact: test tools for Linux aarch64'
         uses: actions/upload-artifact@v4
         with:
