@@ -1,3 +1,4 @@
+#include "guard.h"
 #if defined(_win_)
     #include "tls.h"
 #endif
@@ -10,6 +11,13 @@
 #include <util/generic/yexception.h>
 #include "yassert.h"
 #include <utility>
+
+#include "backtrace.h"
+#include "mutex.h"
+#include <util/stream/output.h>
+
+
+static TMutex OutputMutex;
 
 #if defined(_linux_) || defined(_android_)
     #include <sys/prctl.h>
@@ -194,10 +202,19 @@ namespace {
         }
 
         inline void* Join() {
+            with_lock (OutputMutex) {
+                Cerr << "TPosixThread::Join. H_ = " << H_ << Endl;
+                PrintBackTrace();
+            }
+
             Y_ENSURE(H_, "Attempt to Join non-started thread");
 
             void* tec = nullptr;
-            PCHECK(pthread_join(H_, &tec), "can not join thread");
+            //PCHECK(pthread_join(H_, &tec), "can not join thread");
+            int err = pthread_join(H_, &tec);
+            if (err) {
+                ythrow TSystemError(err) << "can not join thread H_ = " << H_;
+            }
 
             return tec;
         }
@@ -233,6 +250,10 @@ namespace {
                     H_ = {};
                     P_.Reset(holdP);
                     PCHECK(err, "failed to create thread");
+                }
+                with_lock (OutputMutex) {
+                    Cerr << "TPosixThread::Start. H_ = " << H_ << Endl;
+                    PrintBackTrace();
                 }
                 Y_ENSURE(H_, "pthread_create returned thread id = 0");
             }
