@@ -355,9 +355,9 @@ def copy_built_artifacts_to_canonical_place(
 
     artifacts = [
         (cuda_status_prefix, os.path.join('catboost', 'app'), get_exe_files(system, 'catboost')),
-        (cuda_status_prefix, os.path.join('catboost', 'libs', 'model_interface'), get_shared_lib_files(system, 'catboostmodel')),
-        (cuda_status_prefix, os.path.join('catboost', 'libs', 'model_interface', 'static'), get_static_lib_files(system, 'catboostmodel_static')),
-        (cuda_status_prefix, os.path.join('catboost', 'libs', 'train_interface'), get_shared_lib_files(system, 'catboost')),
+        #(cuda_status_prefix, os.path.join('catboost', 'libs', 'model_interface'), get_shared_lib_files(system, 'catboostmodel')),
+        #(cuda_status_prefix, os.path.join('catboost', 'libs', 'model_interface', 'static'), get_static_lib_files(system, 'catboostmodel_static')),
+        #(cuda_status_prefix, os.path.join('catboost', 'libs', 'train_interface'), get_shared_lib_files(system, 'catboost')),
     ]
 
     if build_test_tools:
