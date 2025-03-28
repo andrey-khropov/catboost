@@ -15,6 +15,7 @@
 #include "backtrace.h"
 #include "guard.h"
 #include <util/stream/output.h>
+#include <util/stream/labeled.h>
 
 
 #if defined(_linux_) || defined(_android_)
@@ -201,7 +202,8 @@ namespace {
 
         inline void* Join() {
             with_lock (GetOutSyncMutex()) {
-                Cerr << "TPosixThread::Join. H_ = " << H_ << Endl;
+                Cerr << "TPosixThread::Join. "
+                    << LabeledOutput(H_, SystemCurrentThreadIdImpl()) << Endl;
                 PrintBackTrace();
                 Cerr << Endl;
             }
@@ -213,7 +215,8 @@ namespace {
             int err = pthread_join(H_, &tec);
             if (err) {
                 with_lock (GetOutSyncMutex()) {
-                    Cerr << "TPosixThread::Join. H_ = " << H_ << ": pthread_join error =" << err << Endl;
+                    Cerr << "TPosixThread::Join. "
+                        << LabeledOutput(H_, SystemCurrentThreadIdImpl()) << Endl;
                     PrintBackTrace();
                     Cerr << Endl;
                 }
@@ -257,7 +260,8 @@ namespace {
                 }
 
                 with_lock (GetOutSyncMutex()) {
-                    Cerr << "TPosixThread::Start. H_ = " << H_ << Endl;
+                    Cerr << "TPosixThread::Start. "
+                        << LabeledOutput(H_, SystemCurrentThreadIdImpl()) << Endl;
                     PrintBackTrace();
                     Cerr << Endl;
                 }
