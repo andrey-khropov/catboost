@@ -9,10 +9,15 @@
 #include <util/generic/yexception.h>
 
 #include <util/stream/output.h>
+#include <util/system/guard.h>
 
 #include <cstdlib>
 
 int main(int argc, const char* argv[]) {
+    with_lock (GetOutSyncMutex()) {
+        Cerr << "Hello, world!\n";
+    }
+
     try {
         NCB::TCmdLineInit::Do(argc, argv);
 

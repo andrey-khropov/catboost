@@ -458,3 +458,10 @@ void RedirectStdioToAndroidLog(bool redirect) {
     Y_UNUSED(redirect);
 #endif
 }
+
+#include <util/generic/singleton.h>
+#include <util/system/mutex.h>
+
+TMutex& GetOutSyncMutex() {
+    return *Singleton<TMutex>();
+}

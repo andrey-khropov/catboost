@@ -303,3 +303,8 @@ static inline void Flush(IOutputStream& o) {
 void RedirectStdioToAndroidLog(bool redirect);
 
 /** @} */
+
+
+class TMutex;
+
+TMutex& GetOutSyncMutex();

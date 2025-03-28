@@ -13,11 +13,9 @@
 #include <utility>
 
 #include "backtrace.h"
-#include "mutex.h"
+#include "guard.h"
 #include <util/stream/output.h>
 
-
-static TMutex OutputMutex;
 
 #if defined(_linux_) || defined(_android_)
     #include <sys/prctl.h>
@@ -202,9 +200,10 @@ namespace {
         }
 
         inline void* Join() {
-            with_lock (OutputMutex) {
+            with_lock (GetOutSyncMutex()) {
                 Cerr << "TPosixThread::Join. H_ = " << H_ << Endl;
                 PrintBackTrace();
+                Cerr << Endl;
             }
 
             Y_ENSURE(H_, "Attempt to Join non-started thread");
@@ -251,9 +250,11 @@ namespace {
                     P_.Reset(holdP);
                     PCHECK(err, "failed to create thread");
                 }
-                with_lock (OutputMutex) {
+
+                with_lock (GetOutSyncMutex()) {
                     Cerr << "TPosixThread::Start. H_ = " << H_ << Endl;
                     PrintBackTrace();
+                    Cerr << Endl;
                 }
                 Y_ENSURE(H_, "pthread_create returned thread id = 0");
             }
