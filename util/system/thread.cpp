@@ -212,6 +212,11 @@ namespace {
             //PCHECK(pthread_join(H_, &tec), "can not join thread");
             int err = pthread_join(H_, &tec);
             if (err) {
+                with_lock (GetOutSyncMutex()) {
+                    Cerr << "TPosixThread::Join. H_ = " << H_ << ": pthread_join error =" << err << Endl;
+                    PrintBackTrace();
+                    Cerr << Endl;
+                }
                 ythrow TSystemError(err) << "can not join thread H_ = " << H_;
             }
 
