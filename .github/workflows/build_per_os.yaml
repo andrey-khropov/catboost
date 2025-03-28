@@ -333,7 +333,8 @@ jobs:
           path: catboost/build_native_root/have_cuda/linux-aarch64/catboost/libs/model_interface/libcatboostmodel.*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - name: false #'Upload artifact: catboost4j-spark-impl-sources'
+      - if: false
+        name: 'Upload artifact: catboost4j-spark-impl-sources'
         uses: actions/upload-artifact@v4
         with:
           name: catboost4j-spark-impl-sources-${{ inputs.artifacts_version }}
@@ -341,7 +342,8 @@ jobs:
           retention-days: ${{ inputs.artifact_retention_days }}
           overwrite: true
 
-      - name: false #'Upload artifact: catboost4j-spark_core_resources_classes'
+      - if: false
+        name: 'Upload artifact: catboost4j-spark_core_resources_classes'
         uses: actions/upload-artifact@v4
         with:
           name: catboost4j-spark_core_resources_classes-${{ inputs.artifacts_version }}
