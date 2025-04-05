@@ -239,7 +239,7 @@ jobs:
           mkdir -p ${{ github.workspace }}/catboost_build_home
           rm -fr ${{ github.workspace }}/catboost_build_home/*
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker run --rm --name=catboost_build --user $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v ${{ github.workspace }}/catboost_build_home:$HOME -v ${{ github.workspace }}/catboost:/src/catboost -v ${{ github.workspace }}/$CMAKE_BUILD_CACHE_DIR:/cmake_build_cache -e CATBOOST_PACKAGE_NAME -e CATBOOST_PACKAGE_VERSION ghcr.io/catboost/manylinux2014_x86_64_and_cross_arm64_for_catboost_ci:latest bash -c ". /work/setup_env/build_x86_64.sh && export PATH=\$HOME/.local/bin:\$PATH && export CMAKE_BUILD_CACHE_DIR=/cmake_build_cache/ && ln -sf /opt/cmake_build_env_root \$HOME/ && rsync -rptl /opt/.conan2 \$HOME/ && cd /src/catboost && ./ci/build_all.py  --build-test-tools --target-platforms ${{ inputs.target_platform }}"
+          docker run --rm --name=catboost_build --user $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v ${{ github.workspace }}/catboost_build_home:$HOME -v ${{ github.workspace }}/catboost:/src/catboost -v ${{ github.workspace }}/$CMAKE_BUILD_CACHE_DIR:/cmake_build_cache -e CATBOOST_PACKAGE_NAME -e CATBOOST_PACKAGE_VERSION ghcr.io/catboost/manylinux2014_x86_64_and_cross_arm64_for_catboost_ci:latest bash -c ". /work/setup_env/build_x86_64.sh && export PATH=\$HOME/.local/bin:\$PATH && export CMAKE_BUILD_CACHE_DIR=/cmake_build_cache/ && ln -sf /opt/cmake_build_env_root \$HOME/ && rsync -rptl /opt/.conan2 \$HOME/ && cd /src/catboost && ./ci/build_all.py --target-platforms ${{ inputs.target_platform }}"
 
       - if: inputs.os != 'linux'
         name: Build all without container
@@ -248,7 +248,7 @@ jobs:
           $Env:CMAKE_BUILD_ENV_ROOT = Join-Path ${{ github.workspace }} cmake_build_env_root
           $Env:CMAKE_BUILD_CACHE_DIR = Join-Path ${{ github.workspace }} cmake_build_cache
           Set-Location -Path catboost
-          python ./ci/build_all.py --build-test-tools --target-platforms ${{ inputs.target_platform }}
+          python ./ci/build_all.py --target-platforms ${{ inputs.target_platform }}
 
       - name: Save commit id to CMake build cache
         shell: pwsh
@@ -263,7 +263,7 @@ jobs:
 
       # CLI
 
-      - if: inputs.os != 'macos'
+      - if: false #if: inputs.os != 'macos'
         name: 'Upload artifact: CLI'
         uses: actions/upload-artifact@v4
         with:
@@ -271,7 +271,7 @@ jobs:
           path: catboost/build_native_root/have_cuda/${{ inputs.target_platform }}/catboost/app/catboost${{ inputs.executable_suffix }}
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'macos'
+      - if: false #if: inputs.os == 'macos'
         name: 'Upload artifact: CLI'
         uses: actions/upload-artifact@v4
         with:
@@ -281,7 +281,8 @@ jobs:
 
       # Python
 
-      - name: 'Upload artifacts: python packages'
+      - if: false
+        name: 'Upload artifacts: python packages'
         uses: ./catboost/.github/actions/upload_python_package_artifacts_for_all_py_versions
         with:
           artifacts_version: ${{ inputs.artifacts_version }}
@@ -289,7 +290,7 @@ jobs:
           platform_tag: ${{ inputs.python_platform_tag }}
           artifact_retention_days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.target_platform == 'linux-x86_64'
+      - if: false #if: inputs.target_platform == 'linux-x86_64'
         name: 'Upload artifact: source python package'
         uses: actions/upload-artifact@v4
         with:
@@ -297,7 +298,7 @@ jobs:
           path: catboost/catboost/python-package/dist/*.tar.gz
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.target_platform == 'linux-x86_64'
+      - if: false #if: inputs.target_platform == 'linux-x86_64'
         name: 'Upload artifact: python package visualization widget'
         uses: actions/upload-artifact@v4
         with:
@@ -307,7 +308,8 @@ jobs:
 
       # R package
 
-      - name: 'Upload artifact: R package'
+      - if: false
+        name: 'Upload artifact: R package'
         uses: actions/upload-artifact@v4
         with:
           name: catboost-R-package-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
@@ -316,7 +318,7 @@ jobs:
 
       # catboostmodel
 
-      - if: inputs.os == 'linux'
+      - if: false #if: inputs.os == 'linux'
         name: 'Upload artifact: catboostmodel library for Linux'
         uses: actions/upload-artifact@v4
         with:
@@ -324,7 +326,7 @@ jobs:
           path: catboost/build_native_root/have_cuda/${{ inputs.target_platform }}/catboost/libs/model_interface/libcatboostmodel.*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'macos'
+      - if: false #if: inputs.os == 'macos'
         name: 'Upload artifact: catboostmodel library for macOS universal2'
         uses: actions/upload-artifact@v4
         with:
@@ -332,7 +334,7 @@ jobs:
           path: catboost/build_native_root/no_cuda/${{ inputs.target_platform }}/catboost/libs/model_interface/libcatboostmodel.*
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'windows'
+      - if: false #if: inputs.os == 'windows'
         name: 'Upload artifact: catboostmodel library for Windows x86_64'
         uses: actions/upload-artifact@v4
         with:
@@ -386,7 +388,7 @@ jobs:
 
       # catboost-prediction
 
-      - name: 'Upload artifact: catboost4j-prediction_resources'
+      - if: false #name: 'Upload artifact: catboost4j-prediction_resources'
         uses: actions/upload-artifact@v4
         with:
           name: catboost4j-prediction_resources-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
@@ -395,7 +397,7 @@ jobs:
 
       # test tools
 
-      - name: 'Upload artifact: test tools'
+      - if: false #name: 'Upload artifact: test tools'
         uses: actions/upload-artifact@v4
         with:
           name: catboost-test-tools-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}

@@ -36,12 +36,12 @@ from typing import List, Tuple, Optional
 IS_IN_GITHUB_ACTION = 'GITHUB_ACTION' in os.environ
 
 PYTHON_VERSIONS = [
-    (3,8),
-    (3,9),
-    (3,10),
-    (3,11),
-    (3,12),
-    (3,13)
+    # (3,8),
+    # (3,9),
+    # (3,10),
+    # (3,11),
+    # (3,12),
+    # (3,13)
 ]
 
 MSVS_VERSION = '2022'
@@ -284,7 +284,7 @@ def build_jvm_artifacts(
     os.chdir(src_root_dir)
 
     parts = [
-        (os.path.join('catboost', 'jvm-packages', 'catboost4j-prediction'), 'catboost4j-prediction', build_with_cuda_for_main_targets),
+        #(os.path.join('catboost', 'jvm-packages', 'catboost4j-prediction'), 'catboost4j-prediction', build_with_cuda_for_main_targets),
         (os.path.join('catboost', 'spark', 'catboost4j-spark', 'core'), 'catboost4j-spark-impl', False)
     ]
 
@@ -695,31 +695,12 @@ def build_all_for_one_platform(
 
 
     # build all non python-version specific variants for targets that could use CUDA
-    build_native_wrapper.run(
-        targets=all_catboost_targets_except_python_and_spark,
-        have_cuda=build_with_cuda_for_main_targets,
-        native_built_tools_root_dir=native_built_tools_root_dir
-    )
+    # build_native_wrapper.run(
+    #     targets=all_catboost_targets_except_python_and_spark,
+    #     have_cuda=build_with_cuda_for_main_targets,
+    #     native_built_tools_root_dir=native_built_tools_root_dir
+    # )
 
-    if not only_native_artifacts:
-        build_r_package(
-            src_root_dir,
-            build_native_root_dir,
-            build_with_cuda_for_main_targets,
-            platform_name,
-            dry_run,
-            verbose
-        )
-
-        build_jvm_artifacts(
-            src_root_dir,
-            build_native_root_dir,
-            platform_name,
-            macos_universal_binaries,
-            build_with_cuda_for_main_targets,
-            dry_run,
-            verbose
-        )
 
     targets_wo_cuda = ['catboost4j-spark-impl-cpp']
     if build_test_tools:
@@ -751,6 +732,26 @@ def build_all_for_one_platform(
             build_with_cuda_for_main_targets,
             only_native_artifacts,
             native_built_tools_root_dir
+        )
+
+    if not only_native_artifacts:
+        # build_r_package(
+        #     src_root_dir,
+        #     build_native_root_dir,
+        #     build_with_cuda_for_main_targets,
+        #     platform_name,
+        #     dry_run,
+        #     verbose
+        # )
+
+        build_jvm_artifacts(
+            src_root_dir,
+            build_native_root_dir,
+            platform_name,
+            macos_universal_binaries,
+            build_with_cuda_for_main_targets,
+            dry_run,
+            verbose
         )
 
     if os.environ.get('CMAKE_BUILD_CACHE_DIR'):
