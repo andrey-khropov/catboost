@@ -527,6 +527,7 @@ endfunction()
 
 
 function(conan_get_version conan_command conan_current_version)
+    message(STATUS "CMake-Conan: conan_get_version: conan_command: '${conan_command}'")
     execute_process(
         COMMAND ${conan_command} --version
         OUTPUT_VARIABLE conan_output
