@@ -12,7 +12,10 @@
 # Please refer to the build instructions in the repository for more information about manual
 # changes in this file.
 
+set(CMAKE_FIND_DEBUG_MODE TRUE)
 find_package(Java REQUIRED)
+set(CMAKE_FIND_DEBUG_MODE FALSE)
+
 
 find_package(SWIG REQUIRED COMPONENTS
   java

@@ -133,6 +133,15 @@ jobs:
           tar xzvf zulu8.78.0.19-ca-jdk8.0.412-macosx_aarch64.tar.gz
           ln -s ./zulu8.78.0.19-ca-jdk8.0.412-macosx_aarch64/zulu-8.jdk ./jdk-8
 
+          echo "List JDKs"
+          echo "List JDK for x86_64"
+          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-x86_64/Library/Java/JavaVirtualMachines/
+          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-x86_64/Library/Java/JavaVirtualMachines/jdk-8/
+
+          echo "List JDK for aarch64"
+          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-arm64/Library/Java/JavaVirtualMachines/
+          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-arm64/Library/Java/JavaVirtualMachines/jdk-8/
+
           # Python
           # cd $CMAKE_BUILD_ENV_ROOT/darwin-arm64
           # mkdir -p Python
@@ -239,7 +248,7 @@ jobs:
           mkdir -p ${{ github.workspace }}/catboost_build_home
           rm -fr ${{ github.workspace }}/catboost_build_home/*
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker run --rm --name=catboost_build --user $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v ${{ github.workspace }}/catboost_build_home:$HOME -v ${{ github.workspace }}/catboost:/src/catboost -v ${{ github.workspace }}/$CMAKE_BUILD_CACHE_DIR:/cmake_build_cache -e CATBOOST_PACKAGE_NAME -e CATBOOST_PACKAGE_VERSION ghcr.io/catboost/manylinux2014_x86_64_and_cross_arm64_for_catboost_ci:latest bash -c ". /work/setup_env/build_x86_64.sh && export PATH=\$HOME/.local/bin:\$PATH && export CMAKE_BUILD_CACHE_DIR=/cmake_build_cache/ && ln -sf /opt/cmake_build_env_root \$HOME/ && rsync -rptl /opt/.conan2 \$HOME/ && cd /src/catboost && ./ci/build_all.py --target-platforms ${{ inputs.target_platform }}"
+          docker run --rm --name=catboost_build --user $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v ${{ github.workspace }}/catboost_build_home:$HOME -v ${{ github.workspace }}/catboost:/src/catboost -v ${{ github.workspace }}/$CMAKE_BUILD_CACHE_DIR:/cmake_build_cache -e CATBOOST_PACKAGE_NAME -e CATBOOST_PACKAGE_VERSION ghcr.io/catboost/manylinux2014_x86_64_and_cross_arm64_for_catboost_ci:latest bash -c ". /work/setup_env/build_x86_64.sh && export PATH=\$HOME/.local/bin:\$PATH && export CMAKE_BUILD_CACHE_DIR=/cmake_build_cache/ && ln -sf /opt/cmake_build_env_root \$HOME/ && rsync -rptl /opt/.conan2 \$HOME/ && cd /src/catboost && ./ci/build_all.py --target-platforms ${{ inputs.target_platform }} --verbose"
 
       - if: inputs.os != 'linux'
         name: Build all without container
@@ -248,7 +257,7 @@ jobs:
           $Env:CMAKE_BUILD_ENV_ROOT = Join-Path ${{ github.workspace }} cmake_build_env_root
           $Env:CMAKE_BUILD_CACHE_DIR = Join-Path ${{ github.workspace }} cmake_build_cache
           Set-Location -Path catboost
-          python ./ci/build_all.py --target-platforms ${{ inputs.target_platform }}
+          python ./ci/build_all.py --target-platforms ${{ inputs.target_platform }} --verbose
 
       - name: Save commit id to CMake build cache
         shell: pwsh
@@ -405,4 +414,11 @@ jobs:
             catboost/build_native_root/no_cuda/${{ inputs.target_platform }}/catboost/tools/limited_precision_dsv_diff/limited_precision_dsv_diff${{ inputs.executable_suffix }}
             catboost/build_native_root/no_cuda/${{ inputs.target_platform }}/catboost/tools/limited_precision_json_diff/limited_precision_json_diff${{ inputs.executable_suffix }}
             catboost/build_native_root/no_cuda/${{ inputs.target_platform }}/catboost/tools/model_comparator/model_comparator${{ inputs.executable_suffix }}
+          retention-days: ${{ inputs.artifact_retention_days }}
+
+      - name: 'Upload build.ninja for no_cuda'
+        uses: actions/upload-artifact@v4
+        with:
+          name: no_cuda_build.ninja-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
+          path: catboost/build_native_root/no_cuda/${{ inputs.target_platform }}/build.ninja
           retention-days: ${{ inputs.artifact_retention_days }}
