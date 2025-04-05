@@ -314,7 +314,11 @@ def build_jvm_artifacts(
             logging.info(' '.join(cmd))
         if not dry_run:
             environ = copy.deepcopy(os.environ)
-            environ['JAVA_HOME'] = os.path.join(CMAKE_BUILD_ENV_ROOT, get_native_platform_name(), JAVA_HOME)
+            environ['JAVA_HOME'] = os.path.join(
+                CMAKE_BUILD_ENV_ROOT,
+                get_native_platform_name(),
+                JAVA_HOME[1:]
+            )
             subprocess.check_call(cmd, env=environ)
 
 
