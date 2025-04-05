@@ -22,6 +22,7 @@
 
 import argparse
 import concurrent.futures
+import copy
 import distutils
 import hashlib
 import logging
@@ -312,7 +313,9 @@ def build_jvm_artifacts(
         if verbose:
             logging.info(' '.join(cmd))
         if not dry_run:
-            subprocess.check_call(cmd)
+            environ = copy.deepcopy(os.environ)
+            environ['JAVA_HOME'] = os.path.join(CMAKE_BUILD_ENV_ROOT, platform_name, JAVA_HOME)
+            subprocess.check_call(cmd, env=environ)
 
 
 def get_exe_files(system:str, name:str) -> List[str]:
