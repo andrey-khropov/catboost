@@ -754,16 +754,16 @@ def build_all_for_one_platform(
             verbose
         )
 
-    if os.environ.get('CMAKE_BUILD_CACHE_DIR'):
-        copy_built_artifacts_to_canonical_place(
-            platform_name,
-            build_with_cuda_for_main_targets,
-            build_native_root_dir,
-            built_output_root_dir,
-            build_test_tools=build_test_tools,
-            dry_run=dry_run,
-            verbose=verbose
-        )
+    # if os.environ.get('CMAKE_BUILD_CACHE_DIR'):
+    #     copy_built_artifacts_to_canonical_place(
+    #         platform_name,
+    #         build_with_cuda_for_main_targets,
+    #         build_native_root_dir,
+    #         built_output_root_dir,
+    #         build_test_tools=build_test_tools,
+    #         dry_run=dry_run,
+    #         verbose=verbose
+    #     )
 
 
 def build_all(
