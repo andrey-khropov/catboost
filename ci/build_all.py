@@ -784,8 +784,8 @@ def build_all(
             dry_run,
             verbose,
             [
-                ['python3', 'setup.py', 'build_widget'],
-                ['python3', '-m', 'build', '--sdist']
+                #['python3', 'setup.py', 'build_widget'],
+                #['python3', '-m', 'build', '--sdist']
             ]
         )
 
