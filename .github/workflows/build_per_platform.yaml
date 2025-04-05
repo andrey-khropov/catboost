@@ -134,13 +134,19 @@ jobs:
           ln -s ./zulu8.78.0.19-ca-jdk8.0.412-macosx_aarch64/zulu-8.jdk ./jdk-8
 
           echo "List JDKs"
-          echo "List JDK for x86_64"
-          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-x86_64/Library/Java/JavaVirtualMachines/
-          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-x86_64/Library/Java/JavaVirtualMachines/jdk-8/
+          echo 'CMAKE_BUILD_ENV_ROOT / darwin-x86_64'
+          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-x86_64/
+          echo 'CMAKE_BUILD_ENV_ROOT / darwin-x86_64 / JAVA_HOME'
+          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-x86_64/Library/Java/JavaVirtualMachines/jdk-8/Contents/Home/
+          echo 'CMAKE_BUILD_ENV_ROOT / darwin-x86_64 / JAVA_HOME / bin'
+          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-x86_64/Library/Java/JavaVirtualMachines/jdk-8/Contents/Home/bin/
 
-          echo "List JDK for aarch64"
-          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-arm64/Library/Java/JavaVirtualMachines/
-          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-arm64/Library/Java/JavaVirtualMachines/jdk-8/
+          echo 'CMAKE_BUILD_ENV_ROOT / darwin-arm64'
+          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-arm64/
+          echo 'CMAKE_BUILD_ENV_ROOT / darwin-arm64 / JAVA_HOME'
+          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-arm64/Library/Java/JavaVirtualMachines/jdk-8/Contents/Home/
+          echo 'CMAKE_BUILD_ENV_ROOT / darwin-arm64 / JAVA_HOME / bin'
+          ls -l $CMAKE_BUILD_ENV_ROOT/darwin-arm64/Library/Java/JavaVirtualMachines/jdk-8/Contents/Home/bin/
 
           # Python
           # cd $CMAKE_BUILD_ENV_ROOT/darwin-arm64
@@ -181,6 +187,16 @@ jobs:
           # JDK
           Set-Location -Path $CMAKE_BUILD_ENV_ROOT\windows-x86_64
           New-Item -Path .\jdk-8 -ItemType SymbolicLink -Value $Env:JAVA_HOME_8_X64
+
+          echo 'CMAKE_BUILD_ENV_ROOT / windows-x86_64'
+          ls -l $CMAKE_BUILD_ENV_ROOT\windows-x86_64
+
+          echo 'CMAKE_BUILD_ENV_ROOT / windows-x86_64 / jdk-8 '
+          ls -l $CMAKE_BUILD_ENV_ROOT\windows-x86_64\jdk-8\
+
+          echo 'CMAKE_BUILD_ENV_ROOT / windows-x86_64 / jdk-8 / bin  '
+          ls -l $CMAKE_BUILD_ENV_ROOT\windows-x86_64\jdk-8\bin\
+
 
           # Python
           # Set-Location -Path $CMAKE_BUILD_ENV_ROOT\windows-x86_64
