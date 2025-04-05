@@ -90,7 +90,7 @@ jobs:
       - if: inputs.os == 'macos'
         name: Env setup on macOS
         run: |
-          #python3 -m pip install -U conan==2.4.1 setuptools wheel jupyterlab==3.0.6 build
+          python3 -m pip install -U conan==2.4.1 setuptools wheel jupyterlab==3.0.6 build
 
           brew update
           brew install ninja
@@ -257,6 +257,7 @@ jobs:
           $Env:CMAKE_BUILD_ENV_ROOT = Join-Path ${{ github.workspace }} cmake_build_env_root
           $Env:CMAKE_BUILD_CACHE_DIR = Join-Path ${{ github.workspace }} cmake_build_cache
           Set-Location -Path catboost
+          conan --version
           python ./ci/build_all.py --target-platforms ${{ inputs.target_platform }} --verbose
 
       - name: Save commit id to CMake build cache
