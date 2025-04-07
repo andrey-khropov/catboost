@@ -7448,9 +7448,32 @@ def test_model_sum_labels():
 
 def test_tree_depth_pairwise(task_type):
     if task_type == 'GPU':
+        train_pool = Pool(QUERYWISE_TRAIN_FILE, column_description=QUERYWISE_CD_FILE, pairs=QUERYWISE_TRAIN_PAIRS_FILE)
         with pytest.raises(CatBoostError):
-            CatBoost({'iterations': 2, 'loss_function': 'PairLogitPairwise', 'task_type': task_type, 'gpu_ram_part': TEST_GPU_RAM_PART, 'devices': '0', 'depth': 9})
-        CatBoost({'iterations': 2, 'loss_function': 'PairLogitPairwise', 'task_type': task_type, 'gpu_ram_part': TEST_GPU_RAM_PART, 'devices': '0', 'depth': 8})
+            model = CatBoost(
+                {
+                    'iterations': 2,
+                    'loss_function':
+                    'PairLogitPairwise',
+                    'task_type': task_type,
+                    'gpu_ram_part': TEST_GPU_RAM_PART,
+                    'devices': '0',
+                    'depth': 9
+                }
+            )
+            model.fit(train_pool)
+
+        model = CatBoost(
+            {
+                'iterations': 2,
+                'loss_function': 'PairLogitPairwise',
+                'task_type': task_type,
+                'gpu_ram_part': TEST_GPU_RAM_PART,
+                'devices': '0',
+                'depth': 8
+            }
+        )
+        model.fit(train_pool)
 
 
 def test_eval_set_with_no_target(task_type):
@@ -7696,10 +7719,12 @@ def test_param_synonyms(task_type):
         (['random_seed', 'random_state'], 1),
         (['l2_leaf_reg', 'reg_lambda'], 4),
         (['depth', 'max_depth'], 7),
-        (['rsm', 'colsample_bylevel'], 0.5),
         (['border_count', 'max_bin'], 32),
         # (['verbose', 'verbose_eval'], True), # TODO(akhropov): support 'verbose_eval' in CatBoostClassifier ?
     ]
+
+    if task_type == 'CPU':
+        synonym_params.append((['rsm', 'colsample_bylevel'], 0.5))
 
     train_pool = Pool(TRAIN_FILE, column_description=CD_FILE)
 
@@ -9077,7 +9102,6 @@ def test_pools_equal_on_dense_and_scipy_sparse_input(dataset):
                 assert _have_equal_features(sparse_pool, canon_sparse_pool, False)
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Crashes, investigation in progress")
 @pytest.mark.parametrize(
     'features_dtype',
     numpy_num_data_types,
