@@ -3110,8 +3110,9 @@ class LoglossObjectiveNumpy32(object):
 
 
 @pytest.mark.parametrize('loss_objective', [LoglossObjective, LoglossObjectiveNumpy, LoglossObjectiveNumpy32])
-@fails_on_gpu(how='User defined loss functions, metrics and callbacks are not supported for GPU')
 def test_custom_objective(task_type, loss_objective):
+    if task_type == 'GPU':
+        pytest.skip('CPU custom objectives used in GPU training will cause the process termination')
 
     train_pool = Pool(data=TRAIN_FILE, column_description=CD_FILE)
     test_pool = Pool(data=TEST_FILE, column_description=CD_FILE)
@@ -3132,8 +3133,10 @@ def test_custom_objective(task_type, loss_objective):
         assert abs(p1 - p2) < EPS
 
 
-@fails_on_gpu(how='User defined loss functions, metrics and callbacks are not supported for GPU')
 def test_multilabel_custom_objective(task_type, n=10):
+    if task_type == 'GPU':
+        pytest.skip('CPU custom objectives used in GPU training will cause the process termination')
+
     class MultiRMSEObjective(MultiTargetCustomObjective):
         def calc_ders_multi(self, approxes, targets, weight):
             assert len(approxes) == len(targets)
@@ -7448,9 +7451,32 @@ def test_model_sum_labels():
 
 def test_tree_depth_pairwise(task_type):
     if task_type == 'GPU':
+        train_pool = Pool(QUERYWISE_TRAIN_FILE, column_description=QUERYWISE_CD_FILE, pairs=QUERYWISE_TRAIN_PAIRS_FILE)
         with pytest.raises(CatBoostError):
-            CatBoost({'iterations': 2, 'loss_function': 'PairLogitPairwise', 'task_type': task_type, 'gpu_ram_part': TEST_GPU_RAM_PART, 'devices': '0', 'depth': 9})
-        CatBoost({'iterations': 2, 'loss_function': 'PairLogitPairwise', 'task_type': task_type, 'gpu_ram_part': TEST_GPU_RAM_PART, 'devices': '0', 'depth': 8})
+            model = CatBoost(
+                {
+                    'iterations': 2,
+                    'loss_function':
+                    'PairLogitPairwise',
+                    'task_type': task_type,
+                    'gpu_ram_part': TEST_GPU_RAM_PART,
+                    'devices': '0',
+                    'depth': 9
+                }
+            )
+            model.fit(train_pool)
+
+        model = CatBoost(
+            {
+                'iterations': 2,
+                'loss_function': 'PairLogitPairwise',
+                'task_type': task_type,
+                'gpu_ram_part': TEST_GPU_RAM_PART,
+                'devices': '0',
+                'depth': 8
+            }
+        )
+        model.fit(train_pool)
 
 
 def test_eval_set_with_no_target(task_type):
@@ -7696,10 +7722,12 @@ def test_param_synonyms(task_type):
         (['random_seed', 'random_state'], 1),
         (['l2_leaf_reg', 'reg_lambda'], 4),
         (['depth', 'max_depth'], 7),
-        (['rsm', 'colsample_bylevel'], 0.5),
         (['border_count', 'max_bin'], 32),
         # (['verbose', 'verbose_eval'], True), # TODO(akhropov): support 'verbose_eval' in CatBoostClassifier ?
     ]
+
+    if task_type == 'CPU':
+        synonym_params.append((['rsm', 'colsample_bylevel'], 0.5))
 
     train_pool = Pool(TRAIN_FILE, column_description=CD_FILE)
 
@@ -9077,7 +9105,6 @@ def test_pools_equal_on_dense_and_scipy_sparse_input(dataset):
                 assert _have_equal_features(sparse_pool, canon_sparse_pool, False)
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Crashes, investigation in progress")
 @pytest.mark.parametrize(
     'features_dtype',
     numpy_num_data_types,
@@ -11488,15 +11515,14 @@ def test_carry_model():
 
 
 def test_custom_gpu_objective_metric(task_type):
-
     if (task_type == 'CPU'):
         return
 
-    if (task_type == 'GPU'):
-        try:
-            from numba import cuda
-        except ImportError:
-            return
+    if (task_type == 'GPU') and (not lib.is_open_source()):
+        pytest.skip('Numba is needed for Custom functions on GPU but it is not supported')
+
+    if task_type == 'GPU':
+        from numba import cuda
 
     class GPURMSEObjective(object):
 
@@ -11573,12 +11599,11 @@ def test_custom_gpu_objective_metric(task_type):
 
 
 def test_custom_gpu_eval_metric(task_type):
+    if (task_type == 'GPU') and (not lib.is_open_source()):
+        pytest.skip('Numba is needed for Custom functions on GPU but it is not supported')
 
-    if (task_type == 'GPU'):
-        try:
-            from numba import cuda
-        except ImportError:
-            pass
+    if task_type == 'GPU':
+        from numba import cuda
 
     class LoglossMetric(object):
         def get_final_error(self, error, weight):
@@ -11669,13 +11694,11 @@ def test_custom_gpu_eval_metric(task_type):
 @pytest.mark.parametrize('add_evaluate', [False, True])
 @pytest.mark.parametrize('add_gpu_evaluate', [False, True])
 def test_eval_metric_correct_selection(task_type, add_evaluate, add_gpu_evaluate):
+    if (task_type == 'GPU') and (not lib.is_open_source()):
+        pytest.skip('Numba is needed for Custom functions on GPU but it is not supported')
 
-    if (task_type == 'GPU'):
-        try:
-            from numba import cuda
-        except ImportError:
-            add_gpu_evaluate = False
-            pass
+    if task_type == 'GPU':
+        from numba import cuda
 
     # Base class for metric mocks
     class EvaluationMetricMockBase(object):
