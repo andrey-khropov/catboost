@@ -1,10 +1,12 @@
 from collections import defaultdict
 
 import os
+import re
 import sys
 
 import tempfile
 import shutil
+import subprocess
 
 import pytest
 
@@ -34,17 +36,45 @@ def get_canonical_name(item):
     filename = "{}.{}".format(class_name.split('.')[0], test_name)
     if not filename:
         filename = "test"
-    filename = filename.replace("[", "_").replace("]", "_")
+    not_allowed_pattern = r"[\[\]:,]"
+    filename = re.sub(not_allowed_pattern, "_", filename)
     filename = tools.normalize_filename(filename)
     return filename
 
-def get_files_to_canonize(test_result):
-    if test_result is None:
-        return []
-    if not isinstance(test_result, list):
-        test_result = [test_result]
-    return [e['uri'][7:] for e in test_result]
 
+def get_diff_cmd_prefix(diff_tool_from_test_result):
+    if diff_tool_from_test_result is None:
+        if sys.platform == 'win32':
+            return ['fc.exe', '/b']
+        else:
+            return ['diff', '-b']
+    else:
+        # yatest's internal mechanisms cut build dir prefix, restore it
+        diff_tool_exec_path_with_build_root = os.path.join(
+            os.environ['CMAKE_BINARY_DIR'],
+            diff_tool_from_test_result[0]
+        )
+        if os.path.exists(diff_tool_exec_path_with_build_root):
+            return [diff_tool_exec_path_with_build_root] + diff_tool_from_test_result[1:]
+        return diff_tool_from_test_result
+
+
+# return file -> {full_path, diff_cmd_prefix}
+def get_files_to_check(test_result):
+    if test_result is None:
+        test_result = []
+    elif not isinstance(test_result, list):
+        test_result = [test_result]
+
+    result = {}
+    for e in test_result:
+        full_path = e['uri'][7:]
+        result[os.path.basename(full_path)] = {
+            'full_path': full_path,
+            'diff_cmd_prefix': get_diff_cmd_prefix(e.get('diff_tool', None))
+        }
+
+    return result
 
 
 class CanonicalProcessor(object):
@@ -54,11 +84,37 @@ class CanonicalProcessor(object):
             def wrapper(*args, **kwargs):
                 global results_to_canonize
 
+                test_dir_name = os.path.dirname(item.path)
+                all_tests_canondata_dir = os.path.join(test_dir_name)
                 canonical_name = get_canonical_name(item)
+                test_canondata_dir = os.path.join(all_tests_canondata_dir, 'canondata', canonical_name)
 
                 res = obj(*args, **kwargs)
-                files_to_canonize = get_files_to_canonize(res)
-                results_to_canonize[os.path.dirname(item.path)][canonical_name] = files_to_canonize
+                files_to_check = get_files_to_check(res)
+
+                results_to_canonize[test_dir_name][canonical_name] = files_to_check
+
+                for fname, spec in files_to_check.items():
+                    canonical_full_path = os.path.join(test_canondata_dir, fname)
+                    if not os.path.exists(canonical_full_path):
+                        base_error_msg = f"Canonical data for the file '{fname}' does not exist"
+                        sys.stderr.write(
+                            base_error_msg + ':\n'
+                            + f"Canonical file full path '{canonical_full_path}':\n"
+                        )
+                        pytest.fail(base_error_msg)
+
+                    diff_cmd = spec['diff_cmd_prefix'] + [canonical_full_path, spec['full_path']]
+
+                    if subprocess.run(diff_cmd).returncode:
+                        base_error_msg = f"Difference with canonical data for the file '{fname}'"
+                        sys.stderr.write(
+                            base_error_msg + ':\n'
+                            + f"Canonical file full path '{canonical_full_path}':\n"
+                            + f"Test output full path '{spec['full_path']}':\n"
+                        )
+                        pytest.fail(base_error_msg)
+
             return wrapper
 
         item.obj = get_wrapper(item.obj)
