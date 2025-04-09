@@ -48,11 +48,13 @@ jobs:
     strategy:
       matrix:
         platform: ${{ fromJSON(needs.env_vars.outputs.os_to_specs_map)[inputs.os] }}
+        python_version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
       fail-fast: false
     with:
       os: ${{ inputs.os }}
       machine: ${{ matrix.platform[0] }}
       runs-on_value: ${{ matrix.platform[1] }}
+      python_version:  ${{ matrix.python_version }}
       artifacts_version: ${{ inputs.artifacts_version }}
       artifacts_run_id: ${{ inputs.artifacts_run_id }}
       artifacts_repository: ${{ inputs.artifacts_repository }}

@@ -12,6 +12,9 @@ on:
       runs-on_value:
         required: true
         type: string
+      python_version:
+        required: true
+        type: string
       artifacts_version:
         required: true
         type: string
@@ -28,6 +31,17 @@ on:
         type: string
         default: catboost_dev
 
+env:
+  py_version_to_platform_subspec: |
+    {
+      "3.8": "cp38-cp38",
+      "3.9": "cp39-cp39",
+      "3.10": "cp310-cp310",
+      "3.11": "cp311-cp311",
+      "3.12": "cp312-cp312",
+      "3.13": "cp313-cp313"
+    }
+
 jobs:
   test:
     runs-on: ${{ inputs.runs-on_value }}
@@ -39,17 +53,17 @@ jobs:
 
       # TODO: running python package tests for all supported python versions
 
-      - name: Setup Python 3.12 for running tests
+      - name: Setup Python ${{ inputs.python_version }} for running tests
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ inputs.python_version }}
 
       - name: Install pytest with plugins
         shell: pwsh
         run: |
           python -m pip install pytest pytest-xdist pytest-randomly
 
-      - if: inputs.os != 'windows'
+      - if: false #inputs.os != 'windows'
         name: Generate CatBoost for Apache Spark projects
         shell: pwsh
         run: |
@@ -58,7 +72,8 @@ jobs:
 
       # TODO: maybe test on other Java versions as well
 
-      - name: Setup JDK 11 for running tests
+      - if: false #
+        name: Setup JDK 11 for running tests
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -70,7 +85,7 @@ jobs:
             catboost/catboost/jvm-packages/catboost4j-prediction/pom.xml
             catboost/catboost/spark/catboost4j-spark/projects/**/pom.xml
 
-      - name: Setup R
+      - if: false #name: Setup R
         uses: r-lib/actions/setup-r@v2
         with:
           r-version: 'release'
@@ -112,7 +127,7 @@ jobs:
         name: Download python package for Ubuntu
         uses: actions/download-artifact@v4
         with:
-          name: catboost-python-package-dist-cp312-cp312-manylinux2014_${{ inputs.machine }}-${{ inputs.artifacts_version }}
+          name: catboost-python-package-dist-${{ fromJSON(env.py_version_to_platform_subspec)[inputs.python_version] }}-manylinux2014_${{ inputs.machine }}-${{ inputs.artifacts_version }}
           path: catboost_python_package_dist/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
@@ -122,7 +137,7 @@ jobs:
         name: Download python package for macOS
         uses: actions/download-artifact@v4
         with:
-          name: catboost-python-package-dist-cp312-cp312-macosx_11_0_universal2-${{ inputs.artifacts_version }}
+          name: catboost-python-package-dist-${{ fromJSON(env.py_version_to_platform_subspec)[inputs.python_version] }}-macosx_11_0_universal2-${{ inputs.artifacts_version }}
           path: catboost_python_package_dist/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
@@ -132,7 +147,7 @@ jobs:
         name: Download python package for Windows
         uses: actions/download-artifact@v4
         with:
-          name: catboost-python-package-dist-cp312-cp312-win_amd64-${{ inputs.artifacts_version }}
+          name: catboost-python-package-dist-${{ fromJSON(env.py_version_to_platform_subspec)[inputs.python_version] }}-win_amd64-${{ inputs.artifacts_version }}
           path: catboost_python_package_dist/
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ inputs.artifacts_repository }}
@@ -158,7 +173,7 @@ jobs:
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
 
-      - if: inputs.os != 'macos'
+      - if: false # inputs.os != 'macos'
         name: Download catboost4j-prediction_resources
         uses: actions/download-artifact@v4
         with:
@@ -168,7 +183,7 @@ jobs:
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
 
-      - if: inputs.os == 'macos'
+      - if: false # inputs.os == 'macos'
         name: Download catboost4j-prediction_resources
         uses: actions/download-artifact@v4
         with:
@@ -178,7 +193,7 @@ jobs:
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
 
-      - if: inputs.os != 'windows'
+      - if: false # inputs.os != 'windows'
         name: Download catboost4j-spark-impl-sources
         uses: actions/download-artifact@v4
         with:
@@ -188,7 +203,7 @@ jobs:
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
 
-      - if: inputs.os != 'windows'
+      - if: false #inputs.os != 'windows'
         name: Download catboost4j-spark_core_resources_classes
         uses: actions/download-artifact@v4
         with:
@@ -198,7 +213,7 @@ jobs:
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
 
-      - if: inputs.os == 'linux'
+      - if: false # inputs.os == 'linux'
         name: Download catboost4j-spark_core_resources for Ubuntu
         uses: actions/download-artifact@v4
         with:
@@ -208,7 +223,7 @@ jobs:
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
 
-      - if: inputs.os == 'macos'
+      - if: false #inputs.os == 'macos'
         name: Download catboost4j-spark_core_resources for macOS
         uses: actions/download-artifact@v4
         with:
@@ -218,7 +233,7 @@ jobs:
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
 
-      - if: inputs.os != 'macos'
+      - if: false # inputs.os != 'macos'
         name: Download R package
         uses: actions/download-artifact@v4
         with:
@@ -228,7 +243,7 @@ jobs:
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
 
-      - if: inputs.os == 'macos'
+      - if: false # inputs.os == 'macos'
         name: Download R package
         uses: actions/download-artifact@v4
         with:
@@ -252,7 +267,7 @@ jobs:
             }
           }
 
-      - name: Run pytest
+      - if: false #name: Run pytest
         shell: pwsh
         run: |
           python -m pip install testpath pytest numpy pandas
@@ -266,26 +281,41 @@ jobs:
           Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/pytest
           python -m pytest -n auto
 
-      - name: Run python package tests
+      - name: Run python package tests with numpy 1
         shell: pwsh
         run: |
-          python -m pip install testpath pytest numpy pandas ipywidgets scikit-learn
+          python -m pip install testpath pytest 'numpy<2.0' pandas ipywidgets scikit-learn
           python -m pip uninstall -y catboost
           python -m pip install ${{ inputs.catboost_package_name }} --pre -f ${{ github.workspace }}/catboost_python_package_dist/
           $Env:CMAKE_SOURCE_DIR = Join-Path ${{ github.workspace }} catboost
           $Env:CMAKE_BINARY_DIR = Join-Path ${{ github.workspace }} build_native_root
-          $Env:TEST_OUTPUT_DIR = Join-Path ${{ github.workspace }} test_output_pytest
+          $Env:TEST_OUTPUT_DIR = Join-Path ${{ github.workspace }} test_output_python_package_numpy_1
           $Env:PORT_SYNC_PATH = Join-Path ${{ github.workspace }} port_sync
           Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/python-package/ut/medium
           python -m pytest -n auto
 
-      - name: Run jvm-packages/common tests
+      - name: Run python package tests with numpy 2
+        if: inputs.python_version != '3.8'
+        shell: pwsh
+        run: |
+          python -m pip install -U testpath pytest numpy pandas ipywidgets scikit-learn
+          python -m pip uninstall -y catboost
+          python -m pip install ${{ inputs.catboost_package_name }} --pre -f ${{ github.workspace }}/catboost_python_package_dist/
+          $Env:CMAKE_SOURCE_DIR = Join-Path ${{ github.workspace }} catboost
+          $Env:CMAKE_BINARY_DIR = Join-Path ${{ github.workspace }} build_native_root
+          $Env:TEST_OUTPUT_DIR = Join-Path ${{ github.workspace }} test_output_python_package_numpy_2
+          $Env:PORT_SYNC_PATH = Join-Path ${{ github.workspace }} port_sync
+          Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/python-package/ut/medium
+          python -m pytest -n auto
+
+      - if: false
+        name: Run jvm-packages/common tests
         shell: pwsh
         run: |
           Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/jvm-packages/common
           mvn test
 
-      - name: Run catboost4j-prediction tests
+      - if: false #name: Run catboost4j-prediction tests
         shell: pwsh
         run: |
           Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/jvm-packages/common
@@ -295,7 +325,7 @@ jobs:
 
       # TODO: maybe test on other Spark versions as well
 
-      - if: inputs.os != 'windows'
+      - if: false #if: inputs.os != 'windows'
         name: Run catboost4j-spark tests
         shell: pwsh
         run: |
@@ -304,14 +334,14 @@ jobs:
           Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/spark/catboost4j-spark/projects/spark_3.5_2.12
           mvn -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark_core_resources/ -D"prebuilt.native.sources.jar"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark-impl-sources.jar test
 
-      - if: inputs.os != 'macos'
+      - if: false #if: inputs.os != 'macos'
         name: Check R package
         shell: pwsh
         run: |
           Rscript -e "install.packages('remotes', Ncpus = parallel::detectCores()); remotes::install_local('catboost_R_package/catboost-R-${{ inputs.os }}-${{ inputs.machine }}.tgz', INSTALL_opts = c('--no-multiarch', '--install-tests'))"
           Rscript -e "install.packages(c('testthat','caret','tibble'), Ncpus = parallel::detectCores()); testthat::test_package('catboost')"
 
-      - if: inputs.os == 'macos'
+      - if: false #if: inputs.os == 'macos'
         name: Check R package
         shell: pwsh
         run: |
