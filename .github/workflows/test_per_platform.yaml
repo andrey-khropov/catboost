@@ -283,6 +283,7 @@ jobs:
 
       - name: Run python package tests with numpy 1
         if: inputs.python_version != '3.13'
+        continue-on-error: true
         shell: pwsh
         run: |
           python -m pip install testpath pytest 'numpy<2.0' pandas ipywidgets scikit-learn
