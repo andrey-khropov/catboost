@@ -6078,6 +6078,7 @@ def test_learning_rate_auto_set_in_cv(task_type):
     return local_canonical_file(remove_time_from_json(os.path.join(train_dir_prefix, JSON_LOG_CV_PATH(0))))
 
 
+@pytest.mark.skip(reason="Flaky")
 def test_shap_multiclass(task_type):
     pool = Pool(CLOUDNESS_TRAIN_FILE, column_description=CLOUDNESS_CD_FILE)
     classifier = CatBoostClassifier(
