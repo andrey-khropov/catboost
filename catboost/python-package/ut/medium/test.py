@@ -9843,7 +9843,7 @@ def test_uncertainty_prediction_types(virtual_ensembles_count, prediction_type, 
         shape = preds.shape
         assert len(shape) == 3 and shape[1] == virtual_ensembles_count
         preds = preds.reshape(shape[0], shape[1] * shape[2])
-    np.savetxt(preds_path, preds, fmt='%.9f', delimiter='\t')
+    np.savetxt(preds_path, preds, fmt='%.6f', delimiter='\t')
     return local_canonical_file(preds_path)
 
 
@@ -9926,7 +9926,7 @@ def test_diffusion_temperature_with_shrink_mode(shrink_mode, shrink_rate, diffus
     model.fit(train_pool)
     pred = model.predict_proba(test_pool)
     preds_path = test_output_path('predictions.tsv')
-    np.savetxt(preds_path, np.array(pred), fmt='%.15f', delimiter='\t')
+    np.savetxt(preds_path, np.array(pred), fmt='%.8f', delimiter='\t')
     return local_canonical_file(preds_path)
 
 
