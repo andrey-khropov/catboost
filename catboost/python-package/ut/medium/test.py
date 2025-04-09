@@ -1167,9 +1167,11 @@ def test_predict_class_raw(task_type):
     test_pool = Pool(TEST_FILE, column_description=CD_FILE)
     model = CatBoostClassifier(iterations=2, task_type=task_type, gpu_ram_part=TEST_GPU_RAM_PART, devices='0')
     model.fit(train_pool)
-    pred = model.predict(test_pool)
-    preds_path = test_output_path(PREDS_PATH)
-    np.save(preds_path, np.array(pred))
+    preds_path = test_output_path(PREDS_TXT_PATH)
+    with open(preds_path, 'w') as f:
+        pprint.PrettyPrinter(stream=f).pprint(
+            model.predict(test_pool)
+        )
     return local_canonical_file(preds_path)
 
 
@@ -1833,9 +1835,11 @@ def test_predict_class(task_type):
     test_pool = Pool(TEST_FILE, column_description=CD_FILE)
     model = CatBoostClassifier(iterations=2, learning_rate=0.03, task_type=task_type, gpu_ram_part=TEST_GPU_RAM_PART, devices='0')
     model.fit(train_pool)
-    pred = model.predict(test_pool, prediction_type="Class")
-    preds_path = test_output_path(PREDS_PATH)
-    np.save(preds_path, np.array(pred))
+    preds_path = test_output_path(PREDS_TXT_PATH)
+    with open(preds_path, 'w') as f:
+        pprint.PrettyPrinter(stream=f).pprint(
+            model.predict(test_pool, prediction_type="Class")
+        )
     return local_canonical_file(preds_path)
 
 
@@ -2426,8 +2430,11 @@ def test_staged_predict(task_type):
     preds = []
     for pred in model.staged_predict(test_pool):
         preds.append(pred)
-    preds_path = test_output_path(PREDS_PATH)
-    np.save(preds_path, np.array(preds))
+    preds_path = test_output_path(PREDS_TXT_PATH)
+    with open(preds_path, 'w') as f:
+        pprint.PrettyPrinter(stream=f).pprint(
+            preds
+        )
     return local_canonical_file(preds_path)
 
 
@@ -3110,8 +3117,9 @@ class LoglossObjectiveNumpy32(object):
 
 
 @pytest.mark.parametrize('loss_objective', [LoglossObjective, LoglossObjectiveNumpy, LoglossObjectiveNumpy32])
-@fails_on_gpu(how='User defined loss functions, metrics and callbacks are not supported for GPU')
 def test_custom_objective(task_type, loss_objective):
+    if task_type == 'GPU':
+        pytest.skip('CPU custom objectives used in GPU training will cause the process termination')
 
     train_pool = Pool(data=TRAIN_FILE, column_description=CD_FILE)
     test_pool = Pool(data=TEST_FILE, column_description=CD_FILE)
@@ -3132,8 +3140,10 @@ def test_custom_objective(task_type, loss_objective):
         assert abs(p1 - p2) < EPS
 
 
-@fails_on_gpu(how='User defined loss functions, metrics and callbacks are not supported for GPU')
 def test_multilabel_custom_objective(task_type, n=10):
+    if task_type == 'GPU':
+        pytest.skip('CPU custom objectives used in GPU training will cause the process termination')
+
     class MultiRMSEObjective(MultiTargetCustomObjective):
         def calc_ders_multi(self, approxes, targets, weight):
             assert len(approxes) == len(targets)
@@ -6288,8 +6298,11 @@ def test_fit_and_predict_on_sliced_pools(task_type):
     model.fit(train_subset_pool, eval_set=test_subset_pool)
 
     pred = model.predict(test_subset_pool)
-    preds_path = test_output_path(PREDS_PATH)
-    np.save(preds_path, np.array(pred))
+    preds_path = test_output_path(PREDS_TXT_PATH)
+    with open(preds_path, 'w') as f:
+        pprint.PrettyPrinter(stream=f).pprint(
+            pred
+        )
     return local_canonical_file(preds_path)
 
 
@@ -6385,9 +6398,11 @@ def test_allow_writing_files_and_used_ram_limit(used_ram_limit, task_type):
         task_type=task_type, gpu_ram_part=TEST_GPU_RAM_PART, devices='0',
     )
     model.fit(train_pool, eval_set=test_pool)
-    pred = model.predict(test_pool)
-    preds_path = test_output_path(PREDS_PATH)
-    np.save(preds_path, np.array(pred))
+    preds_path = test_output_path(PREDS_TXT_PATH)
+    with open(preds_path, 'w') as f:
+        pprint.PrettyPrinter(stream=f).pprint(
+            model.predict(test_pool)
+        )
     return local_canonical_file(preds_path)
 
 
@@ -9694,7 +9709,7 @@ def test_text_processing_dictionary():
 
     dictionary_path = test_output_path('dictionary.tsv')
     dictionary.save(dictionary_path)
-    return compare_canonical_models(dictionary_path)
+    return local_canonical_file(dictionary_path)
 
 
 def test_log_proba():
@@ -11512,15 +11527,14 @@ def test_carry_model():
 
 
 def test_custom_gpu_objective_metric(task_type):
-
     if (task_type == 'CPU'):
         return
 
-    if (task_type == 'GPU'):
-        try:
-            from numba import cuda
-        except ImportError:
-            return
+    if (task_type == 'GPU') and (not lib.is_open_source()):
+        pytest.skip('Numba is needed for Custom functions on GPU but it is not supported')
+
+    if task_type == 'GPU':
+        from numba import cuda
 
     class GPURMSEObjective(object):
 
@@ -11597,12 +11611,11 @@ def test_custom_gpu_objective_metric(task_type):
 
 
 def test_custom_gpu_eval_metric(task_type):
+    if (task_type == 'GPU') and (not lib.is_open_source()):
+        pytest.skip('Numba is needed for Custom functions on GPU but it is not supported')
 
-    if (task_type == 'GPU'):
-        try:
-            from numba import cuda
-        except ImportError:
-            pass
+    if task_type == 'GPU':
+        from numba import cuda
 
     class LoglossMetric(object):
         def get_final_error(self, error, weight):
@@ -11693,13 +11706,11 @@ def test_custom_gpu_eval_metric(task_type):
 @pytest.mark.parametrize('add_evaluate', [False, True])
 @pytest.mark.parametrize('add_gpu_evaluate', [False, True])
 def test_eval_metric_correct_selection(task_type, add_evaluate, add_gpu_evaluate):
+    if (task_type == 'GPU') and (not lib.is_open_source()):
+        pytest.skip('Numba is needed for Custom functions on GPU but it is not supported')
 
-    if (task_type == 'GPU'):
-        try:
-            from numba import cuda
-        except ImportError:
-            add_gpu_evaluate = False
-            pass
+    if task_type == 'GPU':
+        from numba import cuda
 
     # Base class for metric mocks
     class EvaluationMetricMockBase(object):
