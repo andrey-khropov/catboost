@@ -226,7 +226,7 @@ model_diff_tool = binary_path("catboost/tools/model_comparator/model_comparator"
 np.set_printoptions(legacy='1.13')
 
 
-def compare_canonical_models(model, diff_limit=0):
+def compare_canonical_models(model, diff_limit=1.e-9):
     return local_canonical_file(model, diff_tool=[model_diff_tool, '--diff-limit', str(diff_limit)])
 
 
@@ -2406,8 +2406,8 @@ def test_ntree_limit(task_type):
     model = CatBoostClassifier(iterations=100, learning_rate=0.03, task_type=task_type, gpu_ram_part=TEST_GPU_RAM_PART, devices='0')
     model.fit(train_pool)
     pred = model.predict_proba(test_pool, ntree_end=10)
-    preds_path = test_output_path(PREDS_PATH)
-    np.save(preds_path, np.array(pred))
+    preds_path = test_output_path(PREDS_TXT_PATH)
+    np.savetxt(preds_path, np.array(pred), fmt='%.8f')
     return local_canonical_file(preds_path)
 
 
@@ -4340,7 +4340,7 @@ def test_grid_search_complex_params(task_type):
 def test_feature_importance(task_type):
     pool = Pool(TRAIN_FILE, column_description=CD_FILE)
     pool_querywise = Pool(QUERYWISE_TRAIN_FILE, column_description=QUERYWISE_CD_FILE)
-    fimp_npy_path = test_output_path(FIMP_NPY_PATH)
+    fimp_txt_path = test_output_path(FIMP_TXT_PATH)
 
     model = CatBoostRanker(iterations=5, learning_rate=0.03, task_type=task_type, gpu_ram_part=TEST_GPU_RAM_PART, devices="0", loss_function="QueryRMSE")
     model.fit(pool_querywise)
@@ -4357,9 +4357,9 @@ def test_feature_importance(task_type):
     except CatBoostError:
         failed = True
     assert failed
-    np.save(fimp_npy_path, np.array(model.feature_importances_))
+    np.savetxt(fimp_txt_path, np.array(model.feature_importances_), fmt='%.8f')
     assert len(model.feature_importances_.shape)
-    return local_canonical_file(fimp_npy_path)
+    return local_canonical_file(fimp_txt_path)
 
 
 def test_feature_importance_interaction_asymmetric_grow_policy():
@@ -4381,7 +4381,7 @@ def test_feature_importance_interaction_asymmetric_grow_policy():
 def test_feature_importance_asymmetric_prediction_value_change(task_type, grow_policy):
     pool = Pool(TRAIN_FILE, column_description=CD_FILE)
     pool_querywise = Pool(QUERYWISE_TRAIN_FILE, column_description=QUERYWISE_CD_FILE)
-    fimp_npy_path = test_output_path(FIMP_NPY_PATH)
+    fimp_txt_path = test_output_path(FIMP_TXT_PATH)
 
     params = {
         "iterations": 5,
@@ -4399,9 +4399,9 @@ def test_feature_importance_asymmetric_prediction_value_change(task_type, grow_p
     model = CatBoostRegressor(**params)
     model.fit(pool)
     assert (model.get_feature_importance() == model.get_feature_importance(type=EFstrType.PredictionValuesChange)).all()
-    np.save(fimp_npy_path, np.array(model.feature_importances_))
+    np.savetxt(fimp_txt_path, np.array(model.feature_importances_), fmt='%.8f')
     assert len(model.feature_importances_.shape)
-    return local_canonical_file(fimp_npy_path)
+    return local_canonical_file(fimp_txt_path)
 
 
 def test_feature_importance_explicit(task_type):
@@ -4409,7 +4409,7 @@ def test_feature_importance_explicit(task_type):
     model = CatBoostClassifier(iterations=5, learning_rate=0.03, task_type=task_type, gpu_ram_part=TEST_GPU_RAM_PART, devices='0')
     model.fit(pool)
     fimp_npy_path = test_output_path(FIMP_NPY_PATH)
-    np.save(fimp_npy_path, np.array(model.get_feature_importance(type=EFstrType.PredictionValuesChange)))
+    np.savetxt(fimp_npy_path, np.array(model.get_feature_importance(type=EFstrType.PredictionValuesChange)), fmt='%.8f')
     return local_canonical_file(fimp_npy_path)
 
 
@@ -4423,16 +4423,16 @@ def test_feature_importance_prettified(task_type):
     with open(fimp_txt_path, 'w') as ofile:
         for f_id, f_imp in feature_importances.values:
             ofile.write('{}\t{}\n'.format(f_id, f_imp))
-    return local_canonical_file(fimp_txt_path)
+    return local_canonical_file(fimp_txt_path, diff_tool=get_limited_precision_dsv_diff_tool(1e-6, False))
 
 
 def test_interaction_feature_importance(task_type):
     pool = Pool(TRAIN_FILE, column_description=CD_FILE)
     model = CatBoostClassifier(iterations=5, learning_rate=0.03, task_type=task_type, gpu_ram_part=TEST_GPU_RAM_PART, devices='0')
     model.fit(pool)
-    fimp_npy_path = test_output_path(FIMP_NPY_PATH)
-    np.save(fimp_npy_path, np.array(model.get_feature_importance(type=EFstrType.Interaction)))
-    return local_canonical_file(fimp_npy_path)
+    fimp_txt_path = test_output_path(FIMP_TXT_PATH)
+    np.save(fimp_txt_path, np.array(model.get_feature_importance(type=EFstrType.Interaction)), fmt='%.9f')
+    return local_canonical_file(fimp_txt_path)
 
 
 def make_reference_data(pool, calc_shap_mode):
@@ -4712,9 +4712,9 @@ def test_exact_shap_feature_importance_with_langevin():
     shaps = model.get_feature_importance(type=EFstrType.ShapValues, data=pool, shap_calc_type="Exact")
     assert np.allclose(model.predict(pool, prediction_type='RawFormulaVal'), np.sum(shaps, axis=1))
 
-    fimp_npy_path = test_output_path(FIMP_NPY_PATH)
-    np.save(fimp_npy_path, np.around(np.array(shaps), 9))
-    return local_canonical_file(fimp_npy_path)
+    fimp_txt_path = test_output_path(FIMP_TXT_PATH)
+    np.savetxt(fimp_txt_path, np.around(np.array(shaps), 9))
+    return local_canonical_file(fimp_txt_path)
 
 
 def test_loss_function_change_asymmetric_and_symmetric(task_type):
@@ -5127,7 +5127,7 @@ def test_verbose_int(verbose, task_type):
         )
     assert (_count_lines(tmpfile) == expected_line_count[verbose])
 
-    return local_canonical_file(remove_time_from_json(JSON_LOG_PATH))
+    return local_canonical_file(remove_time_from_json(JSON_LOG_PATH), diff_tool=get_limited_precision_json_diff_tool(1.e-6))
 
 
 def test_eval_set(task_type):
@@ -6451,7 +6451,7 @@ def do_test_roc(task_type, pool, iterations, additional_train_params={}):
 
     table = np.array(list(zip(curve[2], [1 - x for x in curve[1]], curve[0])))
     out_roc = test_output_path('roc')
-    np.savetxt(out_roc, table)
+    np.savetxt(out_roc, table, fmt='%.8f')
 
     try:
         select_threshold(model, data=test_pool, FNR=0.5, FPR=0.5)
@@ -6475,9 +6475,9 @@ def do_test_roc(task_type, pool, iterations, additional_train_params={}):
         assert fpr_boundary == select_threshold(model, curve=curve, FPR=0.2)
         assert inter_boundary == select_threshold(model, curve=curve)
 
-        f.write('by FNR=0.4: ' + str(fnr_boundary) + '\n')
-        f.write('by FPR=0.2: ' + str(fpr_boundary) + '\n')
-        f.write('by intersection: ' + str(inter_boundary) + '\n')
+        f.write('by FNR=0.4: ' + str(np.round(fnr_boundary, 8)) + '\n')
+        f.write('by FPR=0.2: ' + str(np.round(fpr_boundary, 8)) + '\n')
+        f.write('by intersection: ' + str(np.round(inter_boundary, 8)) + '\n')
 
     return [
         local_canonical_file(out_roc),
@@ -7860,8 +7860,8 @@ def test_grow_policy_restriction(task_type, grow_policy):
     classifier = CatBoostClassifier(**params)
     classifier.fit(pool)
     pred = classifier.predict_proba(pool)
-    preds_path = test_output_path(PREDS_PATH)
-    np.save(preds_path, np.array(pred))
+    preds_path = test_output_path(PREDS_TXT_PATH)
+    np.savetxt(preds_path, np.array(pred), fmt='%.8f')
     return local_canonical_file(preds_path)
 
 
@@ -7953,7 +7953,12 @@ def test_eval_features(task_type, eval_type, problem):
         name = 'eval_results_{}.csv'.format(metric_name.replace(':', '_'))
         eval_results_file_name = test_output_path(name)
         metric_results.get_baseline_comparison().to_csv(eval_results_file_name)
-        canonical_files.append(local_canonical_file(eval_results_file_name))
+        canonical_files.append(
+            local_canonical_file(
+                eval_results_file_name,
+                diff_tool=get_limited_precision_dsv_diff_tool(1e-6, False)
+            )
+        )
 
     return canonical_files
 
@@ -11275,7 +11280,7 @@ def test_eval_fraction_on_ndarray(estimator_type, with_cat_features):
     preds = model_on_all.predict(all_features_data)
 
     preds_path = test_output_path(PREDS_TXT_PATH)
-    np.savetxt(preds_path, np.array(preds))
+    np.savetxt(preds_path, np.array(preds), fmt='%.8f')
     return local_canonical_file(preds_path)
 
 
@@ -11351,7 +11356,7 @@ def test_eval_fraction_on_pool(estimator_type, with_cat_features):
 
     preds_path = test_output_path(PREDS_TXT_PATH)
     np.savetxt(preds_path, np.array(preds))
-    return local_canonical_file(preds_path)
+    return local_canonical_file(preds_path, diff_tool=get_limited_precision_dsv_diff_tool(1e-6, False))
 
 
 def test_fit_with_fixed_splits(task_type):
