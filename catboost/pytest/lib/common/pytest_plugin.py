@@ -45,7 +45,7 @@ def get_canonical_name(item):
 def get_diff_cmd_prefix(diff_tool_from_test_result):
     if diff_tool_from_test_result is None:
         if sys.platform == 'win32':
-            return ['fc.exe', '/b']
+            return ['fc.exe']
         else:
             return ['diff', '-b']
     else:
