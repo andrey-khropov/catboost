@@ -464,7 +464,7 @@
         "uri": "file://test.test_exact_shap_feature_importance_ranking_CPU_/feature_importance.npy"
     },
     "test.test_exact_shap_feature_importance_with_langevin": {
-        "uri": "file://test.test_exact_shap_feature_importance_with_langevin/feature_importance.npy"
+        "uri": "file://test.test_exact_shap_feature_importance_with_langevin/feature_importance.txt"
     },
     "test.test_export_to_python_no_cat_features[CPU-2]": {
         "uri": "file://test.test_export_to_python_no_cat_features_CPU-2_/model.py"
@@ -482,16 +482,16 @@
         "uri": "file://test.test_export_to_python_with_cat_features_from_pandas_CPU_/model.py"
     },
     "test.test_feature_importance[CPU]": {
-        "uri": "file://test.test_feature_importance_CPU_/feature_importance.npy"
+        "uri": "file://test.test_feature_importance_CPU_/feature_importance.txt"
     },
     "test.test_feature_importance_asymmetric_prediction_value_change[CPU-Depthwise]": {
-        "uri": "file://test.test_feature_importance_asymmetric_prediction_value_change_CPU-Depthwise_/feature_importance.npy"
+        "uri": "file://test.test_feature_importance_asymmetric_prediction_value_change_CPU-Depthwise_/feature_importance.txt"
     },
     "test.test_feature_importance_asymmetric_prediction_value_change[CPU-Lossguide]": {
-        "uri": "file://test.test_feature_importance_asymmetric_prediction_value_change_CPU-Lossguide_/feature_importance.npy"
+        "uri": "file://test.test_feature_importance_asymmetric_prediction_value_change_CPU-Lossguide_/feature_importance.txt"
     },
     "test.test_feature_importance_explicit[CPU]": {
-        "uri": "file://test.test_feature_importance_explicit_CPU_/feature_importance.npy"
+        "uri": "file://test.test_feature_importance_explicit_CPU_/feature_importance.txt"
     },
     "test.test_feature_importance_prettified[CPU]": {
         "uri": "file://test.test_feature_importance_prettified_CPU_/feature_importance.txt"
@@ -653,10 +653,10 @@
         "uri": "file://test.test_graph_features_CPU_/predictions.txt"
     },
     "test.test_grow_policy_restriction[CPU-Depthwise]": {
-        "uri": "file://test.test_grow_policy_restriction_CPU-Depthwise_/predictions.npy"
+        "uri": "file://test.test_grow_policy_restriction_CPU-Depthwise_/predictions.txt"
     },
     "test.test_grow_policy_restriction[CPU-Lossguide]": {
-        "uri": "file://test.test_grow_policy_restriction_CPU-Lossguide_/predictions.npy"
+        "uri": "file://test.test_grow_policy_restriction_CPU-Lossguide_/predictions.txt"
     },
     "test.test_ignored_features[CPU]": {
         "uri": "file://test.test_ignored_features_CPU_/model.bin"
@@ -665,7 +665,7 @@
         "uri": "file://test.test_ignored_features_names_CPU_/model.bin"
     },
     "test.test_interaction_feature_importance[CPU]": {
-        "uri": "file://test.test_interaction_feature_importance_CPU_/feature_importance.npy"
+        "uri": "file://test.test_interaction_feature_importance_CPU_/feature_importance.txt"
     },
     "test.test_learning_rate_auto_set[CPU]": {
         "uri": "file://test.test_learning_rate_auto_set_CPU_/catboost_training.json"
@@ -737,7 +737,7 @@
         "uri": "file://test.test_non_ones_weight_CPU_/model.bin"
     },
     "test.test_ntree_limit[CPU]": {
-        "uri": "file://test.test_ntree_limit_CPU_/predictions.npy"
+        "uri": "file://test.test_ntree_limit_CPU_/predictions.txt"
     },
     "test.test_object_importances[CPU]": {
         "uri": "file://test.test_object_importances_CPU_/object_importances.txt"
