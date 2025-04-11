@@ -4408,9 +4408,9 @@ def test_feature_importance_explicit(task_type):
     pool = Pool(TRAIN_FILE, column_description=CD_FILE)
     model = CatBoostClassifier(iterations=5, learning_rate=0.03, task_type=task_type, gpu_ram_part=TEST_GPU_RAM_PART, devices='0')
     model.fit(pool)
-    fimp_npy_path = test_output_path(FIMP_NPY_PATH)
-    np.savetxt(fimp_npy_path, np.array(model.get_feature_importance(type=EFstrType.PredictionValuesChange)), fmt='%.8f')
-    return local_canonical_file(fimp_npy_path)
+    fimp_txt_path = test_output_path(FIMP_TXT_PATH)
+    np.savetxt(fimp_txt_path, np.array(model.get_feature_importance(type=EFstrType.PredictionValuesChange)), fmt='%.8f')
+    return local_canonical_file(fimp_txt_path)
 
 
 def test_feature_importance_prettified(task_type):
@@ -4431,7 +4431,7 @@ def test_interaction_feature_importance(task_type):
     model = CatBoostClassifier(iterations=5, learning_rate=0.03, task_type=task_type, gpu_ram_part=TEST_GPU_RAM_PART, devices='0')
     model.fit(pool)
     fimp_txt_path = test_output_path(FIMP_TXT_PATH)
-    np.save(fimp_txt_path, np.array(model.get_feature_importance(type=EFstrType.Interaction)), fmt='%.9f')
+    np.savetxt(fimp_txt_path, np.array(model.get_feature_importance(type=EFstrType.Interaction)), fmt='%.9f')
     return local_canonical_file(fimp_txt_path)
 
 
