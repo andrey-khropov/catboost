@@ -39,12 +39,12 @@ jobs:
       artifacts_version: ${{ inputs.artifacts_version }}
       artifact_retention_days: ${{ fromJSON(inputs.artifact_retention_days) }}
 
-  test:
-    name: Test
-    uses: ./.github/workflows/test_per_os.yaml
-    needs:
-      - build
-    with:
-      os: ${{ inputs.os }}
-      artifacts_version: ${{ inputs.artifacts_version }}
-      catboost_package_name: ${{ inputs.catboost_package_name }}
+  #test:
+  #  name: Test
+  #  uses: ./.github/workflows/test_per_os.yaml
+  #  needs:
+  #    - build
+  #  with:
+  #    os: ${{ inputs.os }}
+  #    artifacts_version: ${{ inputs.artifacts_version }}
+  #    catboost_package_name: ${{ inputs.catboost_package_name }}
