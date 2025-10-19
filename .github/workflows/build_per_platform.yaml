@@ -76,6 +76,22 @@ jobs:
           remove-codeql: 'true'
           remove-docker-images: 'true'
 
+      # Python 3.8 is no longer included in the standard 'windows-2022' image.
+      - if: inputs.runs-on_value == 'windows-2022'
+        name: Install python3.8 on Windows
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+          update-environment: false
+
+      # Python 3.14 is not included in standard macOS and Windows images yet
+      - if: inputs.os != 'linux'
+        name: Install python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          update-environment: false
+
       - if: inputs.os == 'macos'
         name: Get python_versions_macos_arm64 from cache
         uses: actions/cache/restore@v4
@@ -139,22 +155,6 @@ jobs:
           mkdir -p Python
           cd Python
           unzip ${{ github.workspace }}/python_versions_macos_arm64
-
-      # Python 3.8 is no longer included in the standard 'windows-2022' image.
-      - if: inputs.runs-on_value == 'windows-2022'
-        name: Install python3.8 on Windows
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.8'
-          update-environment: false
-
-      # Python 3.14 is not included in standard macOS and Windows images yet
-      - if: inputs.os != 'linux'
-        name: Install python 3.14
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
-          update-environment: false
 
       - if: inputs.os == 'windows'
         name: Install CUDA on Windows
