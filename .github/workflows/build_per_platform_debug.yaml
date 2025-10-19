@@ -80,7 +80,8 @@ jobs:
         name: Check targets
         run: |
           clang++ --version
-          touch a.cpp
+          echo "int main() { return 0; }" > a.cpp
+          set +e
           for TARGET in x86_64-darwin-default arm64-darwin-default x86_64-apple-darwin arm64-apple-darwin
           do
               echo "Try target $TARGET"
