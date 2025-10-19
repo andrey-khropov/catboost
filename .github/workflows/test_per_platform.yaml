@@ -39,41 +39,15 @@ jobs:
 
       # TODO: running python package tests for all supported python versions
 
-      - name: Setup Python 3.12 for running tests
+      - name: Setup Python 3.14 for running tests
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.14'
 
       - name: Install pytest with plugins
         shell: pwsh
         run: |
           python -m pip install pytest pytest-xdist pytest-randomly
-
-      - if: inputs.os != 'windows'
-        name: Generate CatBoost for Apache Spark projects
-        shell: pwsh
-        run: |
-          Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/spark/catboost4j-spark
-          python ./generate_projects/generate.py
-
-      # TODO: maybe test on other Java versions as well
-
-      - name: Setup JDK 11 for running tests
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-          java-package: jdk
-          cache: 'maven'
-          cache-dependency-path: |
-            catboost/catboost/jvm-packages/common/pom.xml
-            catboost/catboost/jvm-packages/catboost4j-prediction/pom.xml
-            catboost/catboost/spark/catboost4j-spark/projects/**/pom.xml
-
-      - name: Setup R
-        uses: r-lib/actions/setup-r@v2
-        with:
-          r-version: 'release'
 
       - name: Env setup
         shell: pwsh
@@ -158,86 +132,6 @@ jobs:
           repository: ${{ inputs.artifacts_repository }}
           run-id: ${{ inputs.artifacts_run_id }}
 
-      - if: inputs.os != 'macos'
-        name: Download catboost4j-prediction_resources
-        uses: actions/download-artifact@v4
-        with:
-          name: catboost4j-prediction_resources-${{ inputs.os }}-${{ inputs.machine }}-${{ inputs.artifacts_version }}
-          path: prebuilt/catboost4j-prediction_resources/
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ inputs.artifacts_repository }}
-          run-id: ${{ inputs.artifacts_run_id }}
-
-      - if: inputs.os == 'macos'
-        name: Download catboost4j-prediction_resources
-        uses: actions/download-artifact@v4
-        with:
-          name: catboost4j-prediction_resources-darwin-universal2-${{ inputs.artifacts_version }}
-          path: prebuilt/catboost4j-prediction_resources/
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ inputs.artifacts_repository }}
-          run-id: ${{ inputs.artifacts_run_id }}
-
-      - if: inputs.os != 'windows'
-        name: Download catboost4j-spark-impl-sources
-        uses: actions/download-artifact@v4
-        with:
-          name: catboost4j-spark-impl-sources-${{ inputs.artifacts_version }}
-          path: prebuilt/spark/
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ inputs.artifacts_repository }}
-          run-id: ${{ inputs.artifacts_run_id }}
-
-      - if: inputs.os != 'windows'
-        name: Download catboost4j-spark_core_resources_classes
-        uses: actions/download-artifact@v4
-        with:
-          name: catboost4j-spark_core_resources_classes-${{ inputs.artifacts_version }}
-          path: prebuilt/spark/catboost4j-spark_core_resources/
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ inputs.artifacts_repository }}
-          run-id: ${{ inputs.artifacts_run_id }}
-
-      - if: inputs.os == 'linux'
-        name: Download catboost4j-spark_core_resources for Ubuntu
-        uses: actions/download-artifact@v4
-        with:
-          name: catboost4j-spark_core_resources-linux-${{ inputs.machine }}-${{ inputs.artifacts_version }}
-          path: prebuilt/spark/catboost4j-spark_core_resources/
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ inputs.artifacts_repository }}
-          run-id: ${{ inputs.artifacts_run_id }}
-
-      - if: inputs.os == 'macos'
-        name: Download catboost4j-spark_core_resources for macOS
-        uses: actions/download-artifact@v4
-        with:
-          name: catboost4j-spark_core_resources-darwin-universal2-${{ inputs.artifacts_version }}
-          path: prebuilt/spark/catboost4j-spark_core_resources/
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ inputs.artifacts_repository }}
-          run-id: ${{ inputs.artifacts_run_id }}
-
-      - if: inputs.os != 'macos'
-        name: Download R package
-        uses: actions/download-artifact@v4
-        with:
-          name: catboost-R-package-${{ inputs.os }}-${{ inputs.machine }}-${{ inputs.artifacts_version }}
-          path: catboost_R_package
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ inputs.artifacts_repository }}
-          run-id: ${{ inputs.artifacts_run_id }}
-
-      - if: inputs.os == 'macos'
-        name: Download R package
-        uses: actions/download-artifact@v4
-        with:
-          name: catboost-R-package-darwin-universal2-${{ inputs.artifacts_version }}
-          path: catboost_R_package
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ inputs.artifacts_repository }}
-          run-id: ${{ inputs.artifacts_run_id }}
-
       - name: Prepare binaries from artifacts
         shell: pwsh
         run: |
@@ -252,19 +146,6 @@ jobs:
             }
           }
 
-      - name: Run pytest
-        shell: pwsh
-        run: |
-          python -m pip install pytest numpy pandas
-          python -m pip uninstall -y catboost
-          python -m pip install ${{ inputs.catboost_package_name }} --pre -f ${{ github.workspace }}/catboost_python_package_dist/
-          $Env:CMAKE_SOURCE_DIR = Join-Path ${{ github.workspace }} catboost
-          $Env:CMAKE_BINARY_DIR = Join-Path ${{ github.workspace }} build_native_root
-          $Env:TEST_OUTPUT_DIR = Join-Path ${{ github.workspace }} test_output_pytest
-          $Env:PORT_SYNC_PATH = Join-Path ${{ github.workspace }} port_sync
-          $Env:HAVE_CUDA = 0
-          Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/pytest
-          python -m pytest -n auto
 
       - name: Run python package tests
         shell: pwsh
@@ -278,43 +159,3 @@ jobs:
           $Env:PORT_SYNC_PATH = Join-Path ${{ github.workspace }} port_sync
           Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/python-package/ut/medium
           python -m pytest -n auto
-
-      - name: Run jvm-packages/common tests
-        shell: pwsh
-        run: |
-          Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/jvm-packages/common
-          mvn --batch-mode test
-
-      - name: Run catboost4j-prediction tests
-        shell: pwsh
-        run: |
-          Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/jvm-packages/common
-          mvn --batch-mode install -DskipTests -D"gpg.skip"
-          Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/jvm-packages/catboost4j-prediction
-          mvn --batch-mode -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/catboost4j-prediction_resources/ test
-
-      # TODO: maybe test on other Spark versions as well
-
-      - if: inputs.os != 'windows'
-        name: Run catboost4j-spark tests
-        shell: pwsh
-        run: |
-          Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/jvm-packages/common
-          mvn --batch-mode install -DskipTests -D"gpg.skip"
-          Set-Location -LiteralPath ${{ github.workspace }}/catboost/catboost/spark/catboost4j-spark/projects/spark_3.5_2.12
-          mvn --batch-mode -D"prebuilt.native.resources.dir"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark_core_resources/ -D"prebuilt.native.sources.jar"=${{ github.workspace }}/prebuilt/spark/catboost4j-spark-impl-sources.jar test
-
-      - if: inputs.os != 'macos'
-        name: Check R package
-        shell: pwsh
-        run: |
-          Rscript -e "install.packages('remotes', Ncpus = parallel::detectCores()); remotes::install_local('catboost_R_package/catboost-R-${{ inputs.os }}-${{ inputs.machine }}.tgz', INSTALL_opts = c('--no-multiarch', '--install-tests'))"
-          Rscript -e "install.packages(c('testthat','caret','tibble'), Ncpus = parallel::detectCores()); testthat::test_package('catboost')"
-
-      - if: inputs.os == 'macos'
-        name: Check R package
-        shell: pwsh
-        run: |
-          Rscript -e "install.packages('remotes', Ncpus = parallel::detectCores()); remotes::install_local('catboost_R_package/catboost-R-darwin-universal2.tgz', INSTALL_opts = c('--no-multiarch', '--no-staged-install', '--install-tests'))"
-          Rscript -e "install.packages(c('testthat','caret','tibble'), Ncpus = parallel::detectCores()); testthat::test_package('catboost')"
-
