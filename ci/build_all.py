@@ -37,12 +37,13 @@ from typing import List, Tuple, Optional
 IS_IN_GITHUB_ACTION = 'GITHUB_ACTION' in os.environ
 
 PYTHON_VERSIONS = [
-    (3,8),
-    (3,9),
-    (3,10),
-    (3,11),
-    (3,12),
-    (3,13)
+    #(3,8),
+    #(3,9),
+    #(3,10),
+    #(3,11),
+    #(3,12),
+    #(3,13)
+    (3,14),
 ]
 
 MSVS_VERSION = '2022'
