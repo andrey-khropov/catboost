@@ -1,0 +1,88 @@
+name: Build per Platform
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+      target_platform:
+        required: true
+        type: string
+      executable_suffix:
+        required: true
+        type: string
+      python_platform_tag:
+        required: true
+        type: string
+      runs-on_value:
+        required: true
+        type: string
+      revision:
+        required: false
+        type: string
+        default: ${{ github.sha }}
+      catboost_package_name:
+        required: false
+        type: string
+        default: catboost_dev
+      catboost_package_version:
+        required: false
+        type: string
+        default: ''   # version from repository will be used
+      artifacts_version:
+        required: false
+        type: string
+        default: ${{ github.sha }}
+      artifact_retention_days:
+        required: false
+        type: number
+        default: 3
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runs-on_value }}
+    env:
+      CATBOOST_PACKAGE_NAME: ${{ inputs.catboost_package_name }}
+      CATBOOST_PACKAGE_VERSION: ${{ inputs.catboost_package_version }}
+      CMAKE_BUILD_CACHE_DIR: cmake_build_cache
+    steps:
+      - name: Get short SHA
+        shell: pwsh
+        run: echo "GITHUB_SHORT_SHA=$("${{ github.sha }}".SubString(0, 8))" >> $env:GITHUB_ENV
+
+      - if: inputs.os == 'linux'
+        name: Checkout actions from catboost
+        uses: actions/checkout@v4
+        with:
+          path: actions_from_catboost
+          sparse-checkout: .github
+          fetch-depth: 0
+
+      - if: inputs.os == 'linux'
+        name: 'Maximize build space: stage 1'
+        # Remove packages & tools cache not covered by easimon/maximize-build-space action
+        uses: ./actions_from_catboost/.github/actions/build_linux_docker_cleanup_unneeded
+
+      - if: inputs.os == 'linux'
+        name: 'Maximize build space: stage 2'
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 48500  # needed for docker image
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      - if: inputs.os == 'macos'
+        name: Check targets
+        run: |
+          clang++ --version
+          touch a.cpp
+          for TARGET in x86_64-darwin-default arm64-darwin-default x86_64-apple-darwin arm64-apple-darwin
+          do
+              echo "Try target $TARGET"
+              clang++ --target $TARGET a.cpp
+          done

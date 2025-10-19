@@ -1,0 +1,21 @@
+name: Check build and tests
+
+on:
+  push:
+    branches:
+      - github_actions_debug
+
+  pull_request:
+
+jobs:
+  check:
+    name: Check per OS
+    strategy:
+      matrix:
+        os: [macos]
+      fail-fast: false
+    with:
+      os: ${{ matrix.os }}
+      artifacts_version: ${{ github.sha }}
+      catboost_package_version: 1.2.8
+    uses: ./.github/workflows/check_per_os_debug.yaml
