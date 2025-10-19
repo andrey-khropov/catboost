@@ -148,6 +148,14 @@ jobs:
           python-version: '3.8'
           update-environment: false
 
+      # Python 3.14 is not included in standard macOS and Windows images yet
+      - if: inputs.os != 'linux'
+        name: Install python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          update-environment: false
+
       - if: inputs.os == 'windows'
         name: Install CUDA on Windows
         uses: Jimver/cuda-toolkit@v0.2.15
