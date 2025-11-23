@@ -28,11 +28,11 @@ target_include_directories(flatc PRIVATE
 target_link_libraries(flatc PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
-  abseil-cpp-absl-base
+  build-cow-on
 )
 
 target_allocator(flatc
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(flatc PRIVATE

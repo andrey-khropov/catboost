@@ -148,6 +148,25 @@ enum ELanguage: unsigned {
     LANG_ABQ = 131,         // Abaza
     LANG_MYV = 132,         // Erzya
     LANG_MDF = 133,         // Moksha
+    LANG_BUA = 134,         // Buryat
+    LANG_ADY = 135,         // Adyghe
+    LANG_LEZ = 136,         // Lezgian
+    LANG_CRH = 137,         // Crimean Tatar
+    LANG_EVN = 138,         // Evenki
+    LANG_VEP = 139,         // Veps
+    LANG_AVA = 140,         // Avar
+    LANG_KUM = 141,         // Kumyk
+    LANG_DAR = 142,         // Dargwa
+    LANG_INH = 143,         // Ingush
+    LANG_XAL = 144,         // Kalmyk
+    LANG_LBE = 145,         // Lak
+    LANG_TAB = 146,         // Tabasaran
+    LANG_ALT = 147,         // Southern Altai
+    LANG_ATV = 148,         // Northern Altai
+    LANG_YRK = 149,         // Nenets
+    LANG_AGX = 150,         // Aghul
+    LANG_RUT = 151,         // Rutul
+    LANG_ABK = 152,         // Abkhaz
     LANG_MAX
 };
 

@@ -152,7 +152,7 @@ class _CustomLoggersStack(object):
                 return _CustomLoggersStack._get_stream_like_object(log)
 
             cout = init_log(log_cout, sys.stdout, 0)
-            cerr = init_log(log_cout, sys.stderr, 1)
+            cerr = init_log(log_cerr, sys.stderr, 1)
 
             _reset_logger()
             _set_logger(cout, cerr)
@@ -3446,7 +3446,7 @@ class CatBoost(_CatBoostBase):
             Input file name.
         """
         if (fname is None) + (stream is None) + (blob is None) != 2:
-            raise CatBoostError("Exactly one of fname/stream/blob arguments mustn't be None")
+            raise CatBoostError("Only one of fname/stream/blob arguments should be specified")
 
         if fname is not None:
             self._load_model(fname, format)
@@ -4796,7 +4796,7 @@ class CatBoostClassifier(CatBoost):
         MVS bootstrap is supported only on GPU.
 
     subsample : float, [default=None]
-        Sample rate for bagging. This parameter can be used Poisson or Bernoully bootstrap types.
+        Sample rate for bagging. This parameter can be used Poisson or Bernoulli bootstrap types.
 
     mvs_reg : float, [default is set automatically at each iteration based on gradient distribution]
         Regularization parameter for MVS sampling algorithm
@@ -6010,7 +6010,7 @@ class CatBoostRegressor(CatBoost):
         is_regression = CatBoost._is_regression_objective(loss_function) or CatBoost._is_multiregression_objective(loss_function) or CatBoost._is_survivalregression_objective(loss_function)
         if isinstance(loss_function, str) and not is_regression:
             raise CatBoostError("Invalid loss_function='{}': for regressor use "
-                                "RMSE, MultiRMSE, SurvivalAft, MAE, Quantile, LogLinQuantile, Poisson, MAPE, Lq or custom objective object".format(loss_function))
+                                "RMSE, MultiRMSE, SurvivalAft, MAE, Quantile, LogLinQuantile, Poisson, MAPE, Lq, RMSPE or custom objective object".format(loss_function))
 
     def _get_default_prediction_type(self):
         # TODO(ilyzhin) change on get_all_params after MLTOOLS-4758

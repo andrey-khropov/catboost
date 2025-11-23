@@ -21,12 +21,13 @@ target_link_libraries(model_perftest PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   tools-model_perftest-lib
   library-cpp-getopt
 )
 
 target_allocator(model_perftest
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(model_perftest PRIVATE

@@ -9,6 +9,7 @@
 
 #pragma once
 #include <stdint.h>
+
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -184,7 +185,13 @@ namespace ONNX_NAMESPACE {
   _(ScatterElements)                \
   _(Resize)                         \
   _(ceil_mode)                      \
-  _(num_outputs)
+  _(num_outputs)                    \
+  _(start)                          \
+  _(end)                            \
+  _(num_groups)                     \
+  _(stash_type)                     \
+  _(block_size)                     \
+  _(output_dtype)
 
 enum BuiltinSymbol {
 #define DEFINE_SYMBOL(s) k##s,
@@ -219,7 +226,7 @@ static inline bool operator==(Symbol lhs, BuiltinSymbol rhs) {
   return static_cast<uint32_t>(lhs) == static_cast<uint32_t>(rhs);
 }
 
-inline Symbol operator"" _sym(const char* s, size_t) {
+inline Symbol operator""_sym(const char* s, size_t) {
   return Symbol(s);
 }
 

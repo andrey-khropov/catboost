@@ -1,6 +1,9 @@
 #include "stream_capture.h"
 
-#include "cuda_graph.h"
+#include <library/cpp/cuda/exception/exception.h>
+
+#include <cuda_runtime.h>
+
 
 TStreamCapture::~TStreamCapture() {
     cudaGraph_t graph;

@@ -27,6 +27,10 @@ else()
   )
 endif()
 
+if (NOT USE_INTERNAL_CYTHON)
+  find_package(Cython 3.0.10...<4.0 REQUIRED)
+endif()
+
 find_package(Python3 REQUIRED COMPONENTS
   Development
 )
@@ -44,6 +48,7 @@ target_link_libraries(_catboost PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   Python3::Module
   catboost-libs-carry_model
   catboost-libs-cat_feature
@@ -112,6 +117,8 @@ use_export_script(_catboost
 )
 
 target_cython_options(_catboost
+  -X
+  legacy_implicit_noexcept=True
   -E
   UNAME_SYSNAME=Linux
   --module-name
@@ -129,12 +136,6 @@ set_python_type_for_cython(_catboost
 )
 
 vcs_info(_catboost)
-
-# for compatibility between Cython 0.29.x and Cython 3.0.x
-# TODO: remove after final switch to Cython 3.x+
-target_compile_options(_catboost PRIVATE
-  "-DCYTHON_EXTERN_C=extern \"C\""
-)
 
 target_include_directories(_catboost PRIVATE
   ${Python3_NumPy_INCLUDE_DIRS}

@@ -1,5 +1,5 @@
 #include "query_cross_entropy.cuh"
-#include <library/cpp/cuda/wrappers/arch.cuh>
+#include <library/cpp/cuda/wrappers/arch.h>
 
 #include <catboost/cuda/cuda_lib/kernel/kernel.cuh>
 #include <catboost/cuda/cuda_util/kernel/kernel_helpers.cuh>
@@ -7,7 +7,7 @@
 
 #include <util/generic/cast.h>
 
-#include <contrib/libs/nvidia/cub/cub/util_ptx.cuh>
+#include <cub/util_ptx.cuh>
 
 
 #include <cooperative_groups.h>

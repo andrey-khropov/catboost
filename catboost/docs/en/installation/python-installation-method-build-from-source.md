@@ -30,6 +30,8 @@ For building with earlier versions see these pages:
 
 1. As {{ product }} Python package has a native extension library as its' core [build environment setup for CMake](build-environment-setup-for-cmake.md) is required.
 
+1. `setuptools` Python package, version 64.0+. Installed by default for Python < 3.12, an explicit installation is needed for Python 3.12+.
+
 1. Other setup dependencies that can be formulated as python packages are listed in [`pyproject.toml`](https://github.com/catboost/catboost/blob/master/catboost/python-package/pyproject.toml)'s `build-system.requires` and in [`setup.py`](https://github.com/catboost/catboost/blob/master/catboost/python-package/setup.py) in standard `setup_requires` parameter and processed using standard Python tools.
 
     {% note info %}
@@ -51,6 +53,10 @@ For building with earlier versions see these pages:
     If you don't need CatBoost visualization widget support you can disable it's building and bundling with the CatBoost python package by passing `--no-widget` build/installation option.
 
 1. Installation dependencies are listed in [`setup.py`](https://github.com/catboost/catboost/blob/master/catboost/python-package/setup.py) in standard `install_requires` parameter and processed using standard Python tools.
+
+1. User-defined functions
+
+    {% include [python__user-defined-functions-dependencies](../_includes/work_src/reusage-installation/python__user-defined-functions-dependencies.md) %}
 
 {% include [installation-nvidia-driver-reqs](../_includes/work_src/reusage-code-examples/nvidia-driver-reqs.md) %}
 
@@ -144,3 +150,10 @@ Builds in the process. So [build environment setup for CMake](build-environment-
 ```
 python -m pip install <path-to-sdist-tar.gz>
 ```
+
+{% note info %}
+
+If `CUDA_PATH` or `CUDA_ROOT` environment variable is defined and contains a path to a valid `CUDA` installation, then CatBoost python package will be built with this `CUDA` version.
+Otherwise `CUDA` support will be disabled in the package.
+
+{% endnote %}

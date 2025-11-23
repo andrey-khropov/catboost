@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstddef>
 #include <cstring>
 #include <stlfwd>
@@ -28,6 +29,10 @@
     #include "hide_ptr.h"
 #endif
 
+extern "C" {
+    extern const int TStringUseCow;
+}
+
 template <class TCharType, class TCharTraits, class TAllocator>
 void ResizeUninitialized(std::basic_string<TCharType, TCharTraits, TAllocator>& s, size_t len) {
 #if defined(_YNDX_LIBCXX_ENABLE_STRING_RESIZE_UNINITIALIZED)
@@ -39,7 +44,6 @@ void ResizeUninitialized(std::basic_string<TCharType, TCharTraits, TAllocator>& 
 
 #define Y_NOEXCEPT
 
-#ifndef TSTRING_IS_STD_STRING
 template <class T>
 class TStringPtrOps {
 public:
@@ -83,11 +87,11 @@ struct TStdString: public TRefCountHolder, public B {
     }
 
     static TStdString* NullStr() noexcept {
-    #ifdef _LIBCPP_VERSION
+#ifdef _LIBCPP_VERSION
         return (TStdString*)NULL_STRING_REPR;
-    #else
+#else
         return Singleton<TStdString>();
-    #endif
+#endif
     }
 
 private:
@@ -157,7 +161,6 @@ private:
     TStringType& S_;
     size_t Pos_;
 };
-#endif
 
 template <typename TCharType, typename TTraits>
 class TBasicString: public TStringBase<TBasicString<TCharType, TTraits>, TCharType, TTraits> {
@@ -413,6 +416,16 @@ public:
         reserve(rt.Capacity);
     }
 
+#if 0
+    inline ~TBasicString() {
+        if (!TStringUseCow) {
+            if (S_.RefCount() > 1) {
+                abort();
+            }
+        }
+    }
+#endif
+
     inline TBasicString(const TBasicString& s)
 #ifdef TSTRING_IS_STD_STRING
         : Storage_(s.Storage_)
@@ -420,6 +433,11 @@ public:
         : S_(s.S_)
 #endif
     {
+#ifndef TSTRING_IS_STD_STRING
+        if (!TStringUseCow) {
+            Detach();
+        }
+#endif
     }
 
     inline TBasicString(TBasicString&& s) noexcept
@@ -884,10 +902,12 @@ public:
         return this->ConstRef();
     }
 
-    template <typename T, typename = std::enable_if_t<std::is_same_v<T, TStringType>>>
-        operator T&() & Y_LIFETIME_BOUND {
-        return this->MutRef();
-    }
+    /*
+     * We have operator casting TString to `const std::string&` but we explicitly don't support
+     * casting TString to `std::string&` since such casting requires detaching TString and therefore
+     * modifies TString object. Sometimes compiler might call `operator std::string&`
+     * implicitly and it might lead to problems. Check IGNIETFERRO-2155 for details.
+     */
 
     /*
      * Following overloads of "operator+" aim to choose the cheapest implementation depending on

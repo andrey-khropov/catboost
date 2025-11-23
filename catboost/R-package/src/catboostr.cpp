@@ -116,6 +116,47 @@ static int UpdateThreadCount(int threadCount) {
     return threadCount;
 }
 
+void SetClassLabels(SEXP classLabelsParam, TDataMetaInfo* metaInfo) {
+    if (Rf_isNull(classLabelsParam)) {
+        return;
+    }
+    const int classCount = length(classLabelsParam);
+    if (Rf_isInteger(classLabelsParam)) {
+        int *ptr_classLabelsParam = INTEGER(classLabelsParam);
+        for (auto i : xrange(classCount)) {
+            metaInfo->ClassLabels.push_back(NJson::TJsonValue(ptr_classLabelsParam[i]));
+        }
+    } else if (Rf_isString(classLabelsParam)) {
+        for (auto i : xrange(classCount)) {
+            metaInfo->ClassLabels.push_back(
+                NJson::TJsonValue(CHAR(STRING_ELT(classLabelsParam, i)))
+            );
+        }
+    } else {
+        CB_ENSURE(false, "Unsupported class labels data type, only string or integer are supported");
+    }
+}
+
+template <class TSrc>
+void AddTarget(
+    const TSrc* srcTarget,
+    const size_t targetColumns,
+    const size_t targetRows,
+    IRawFeaturesOrderDataVisitor* visitor
+) {
+    for (auto targetIdx : xrange(targetColumns)) {
+        TVector<float> target(targetRows);
+        for (auto docIdx : xrange(targetRows)) {
+            target[docIdx] = static_cast<float>(srcTarget[docIdx + targetRows * targetIdx]);
+        }
+        visitor->AddTarget(
+            targetIdx,
+            MakeIntrusive<TTypeCastArrayHolder<float, float>>(std::move(target))
+        );
+    }
+}
+
+
 extern "C" {
 
 EXPORT_FUNCTION CatBoostCreateFromFile_R(SEXP poolFileParam,
@@ -176,6 +217,7 @@ EXPORT_FUNCTION CatBoostCreateFromFile_R(SEXP poolFileParam,
     return result;
 }
 
+
 EXPORT_FUNCTION CatBoostCreateFromMatrix_R(SEXP floatAndCatMatrixParam,
                                 SEXP targetParam,
                                 SEXP catFeaturesIndicesParam,
@@ -189,7 +231,8 @@ EXPORT_FUNCTION CatBoostCreateFromMatrix_R(SEXP floatAndCatMatrixParam,
                                 SEXP subgroupIdParam,
                                 SEXP pairsWeightParam,
                                 SEXP baselineParam,
-                                SEXP featureNamesParam) {
+                                SEXP featureNamesParam,
+                                SEXP classLabelsParam) {
     SEXP result = NULL;
     R_API_BEGIN();
     SEXP dataDim = floatAndCatMatrixParam != R_NilValue ?
@@ -233,7 +276,21 @@ EXPORT_FUNCTION CatBoostCreateFromMatrix_R(SEXP floatAndCatMatrixParam,
             TVector<ui32>{}, // TODO(akhropov) support embedding features in R
             featureId);
 
-        metaInfo.TargetType = targetColumns ? ERawTargetType::Float : ERawTargetType::None;
+        if (!targetColumns) {
+            metaInfo.TargetType = ERawTargetType::None;
+        } else if (Rf_isInteger(targetParam)) {
+            metaInfo.TargetType = ERawTargetType::Integer;
+            SetClassLabels(classLabelsParam, &metaInfo);
+        } else if (Rf_isReal(targetParam)) {
+            metaInfo.TargetType = ERawTargetType::Float;
+            CB_ENSURE(
+                classLabelsParam == R_NilValue,
+                "Specifying class labels is incompatible with real target data"
+            );
+        } else {
+            CB_ENSURE(false, "Unsupported target data type, only real or integer are supported");
+        }
+
         metaInfo.TargetCount = targetColumns;
         metaInfo.BaselineCount = baselineColumns;
         metaInfo.HasGroupId = groupIdParam != R_NilValue;
@@ -245,16 +302,10 @@ EXPORT_FUNCTION CatBoostCreateFromMatrix_R(SEXP floatAndCatMatrixParam,
 
         visitor->Start(metaInfo, dataRows, EObjectsOrder::Undefined, {});
 
-        double *ptr_targetParam = Rf_isNull(targetParam)? nullptr : REAL(targetParam);
-        for (auto targetIdx : xrange(targetColumns)) {
-            TVector<float> target(targetRows);
-            for (auto docIdx : xrange(targetRows)) {
-                target[docIdx] = static_cast<float>(ptr_targetParam[docIdx + targetRows * targetIdx]);
-            }
-            visitor->AddTarget(
-                targetIdx,
-                MakeIntrusive<TTypeCastArrayHolder<float, float>>(std::move(target))
-            );
+        if (Rf_isInteger(targetParam)) {
+            AddTarget(INTEGER(targetParam), targetColumns, targetRows, visitor);
+        } else if (Rf_isReal(targetParam)) {
+            AddTarget(REAL(targetParam), targetColumns, targetRows, visitor);
         }
         TVector<float> weights(metaInfo.HasWeights ? dataRows : 0);
         TVector<float> groupWeights(metaInfo.HasGroupWeight ? dataRows : 0);
@@ -444,7 +495,7 @@ EXPORT_FUNCTION CatBoostPoolSlice_R(SEXP poolParam, SEXP sizeParam, SEXP offsetP
 
     CB_ENSURE(
         featuresLayout.GetExternalFeatureCount() == featuresLayout.GetFloatFeatureCount(),
-        "Dataset slicing error: non-numeric features present, slicing datasets with categorical and text features is not supported"
+        "Dataset slicing error: non-numeric features present, slicing datasets with categorical, text or embedding features is not supported"
     );
 
     result = PROTECT(allocVector(VECSXP, size));
@@ -631,7 +682,7 @@ EXPORT_FUNCTION CatBoostCV_R(SEXP fitParamsAsJsonParam,
     cvParams.Stratified = asLogical(stratifiedParam);
 
     CB_ENSURE(TryFromString<ECrossValidation>(CHAR(asChar(typeParam)), cvParams.Type),
-              "unsupported type of cross_validation: 'Classical', 'Inverted', 'TimeSeries' was expected");
+              "unsupported type of cross_validation: 'Classical', 'Inverted' or 'TimeSeries' was expected");
 
     TVector<TCVResult> cvResults;
 
@@ -1051,9 +1102,9 @@ EXPORT_FUNCTION CatBoostEvalMetrics_R(
     auto treeCountStart = asInteger(treeCountStartParam);
     auto treeCountEnd = asInteger(treeCountEndParam);
     auto evalPeriod = asInteger(evalPeriodParam);
-    CB_ENSURE(treeCountStart >= 0, "Tree start index should be greater or equal zero");
-    CB_ENSURE(treeCountStart < treeCountEnd, "Tree start index should be less than tree end index");
-    CB_ENSURE(evalPeriod <= (treeCountEnd - treeCountStart), "Eval period should be less or equal than number of trees");
+    CB_ENSURE(treeCountStart >= 0, "Tree start index should be greater or equal than zero");
+    CB_ENSURE(treeCountStart < treeCountEnd, "Tree start index should be less than the tree end index");
+    CB_ENSURE(evalPeriod <= (treeCountEnd - treeCountStart), "Eval period should be less or equal than the number of trees");
     CB_ENSURE(evalPeriod > 0, "Eval period should be more than zero");
 
     size_t metricsParamLen = length(metricsParam);

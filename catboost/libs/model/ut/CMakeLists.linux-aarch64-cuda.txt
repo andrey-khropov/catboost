@@ -21,6 +21,7 @@ target_link_libraries(model_ut PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-testing-unittest_main
   private-libs-algo
   catboost-libs-data
@@ -32,7 +33,7 @@ target_link_libraries(model_ut PUBLIC
 )
 
 target_allocator(model_ut
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(model_ut PRIVATE

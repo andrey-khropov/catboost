@@ -6,7 +6,7 @@
 
 #define CATBOOST_APPLIER_MAJOR 1
 #define CATBOOST_APPLIER_MINOR 2
-#define CATBOOST_APPLIER_FIX 7
+#define CATBOOST_APPLIER_FIX 8
 
 #if defined(__cplusplus)
 extern "C" {
@@ -76,14 +76,17 @@ CATBOOST_API void ModelCalcerDelete(ModelCalcerHandle* modelHandle);
 /**
  * If error occured will return stored exception message.
  * If no error occured, will return invalid pointer
- * @return
+ * The underlying variable is thread-local so:
+ *  - it is thread-safe to get it
+ *  - indicates only errors that happened in the current thread
+ * @return Error message string. Uses UTF-8 encoding
  */
 CATBOOST_API const char* GetErrorString();
 
 /**
  * Load model from file into given model handle
  * @param calcer
- * @param filename
+ * @param filename path to the file. Uses UTF-8 encoding
  * @return false if error occured
  */
 CATBOOST_API bool LoadFullModelFromFile(
@@ -98,6 +101,19 @@ CATBOOST_API bool LoadFullModelFromFile(
  * @return false if error occured
  */
 CATBOOST_API bool LoadFullModelFromBuffer(
+    ModelCalcerHandle* modelHandle,
+    const void* binaryBuffer,
+    size_t binaryBufferSize);
+
+
+/**
+ * Use model directly from given memory region with zero-copy method
+ * @param calcer
+ * @param binaryBuffer pointer to a memory buffer where model file is mapped
+ * @param binaryBufferSize size of the buffer in bytes
+ * @return false if error occured
+ */
+CATBOOST_API bool LoadFullModelZeroCopy(
     ModelCalcerHandle* modelHandle,
     const void* binaryBuffer,
     size_t binaryBufferSize);

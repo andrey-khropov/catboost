@@ -22,8 +22,8 @@ target_link_libraries(catboost-cuda-cuda_util PUBLIC
   yutil
   catboost-libs-helpers
   catboost-cuda-cuda_lib
-  libs-nvidia-cub
-  build-platform-cuda
+  cpp-cuda-exception
+  internal-platform-cuda
 )
 
 target_cuda_sources(catboost-cuda-cuda_util PRIVATE
@@ -89,8 +89,8 @@ target_link_libraries(catboost-cuda-cuda_util.global PUBLIC
   yutil
   catboost-libs-helpers
   catboost-cuda-cuda_lib
-  libs-nvidia-cub
-  build-platform-cuda
+  cpp-cuda-exception
+  internal-platform-cuda
 )
 
 target_sources(catboost-cuda-cuda_util.global PRIVATE

@@ -19,6 +19,7 @@ target_link_libraries(catboost-cuda-methods-ut PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-testing-unittest_main
   catboost-cuda-gpu_data
   catboost-cuda-data
@@ -29,7 +30,7 @@ target_link_libraries(catboost-cuda-methods-ut PUBLIC
 )
 
 target_allocator(catboost-cuda-methods-ut
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(catboost-cuda-methods-ut PRIVATE
@@ -81,7 +82,7 @@ set_yunittest_property(
   catboost-cuda-methods-ut
   PROPERTY
   LABELS
-  SMALL
+  LARGE
 )
 
 set_yunittest_property(

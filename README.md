@@ -43,15 +43,16 @@ Next you may want to investigate:
 * [Regular](https://catboost.ai/docs/features/prediction.html#prediction) and [staged](https://catboost.ai/docs/features/staged-prediction.html#staged-prediction) predictions
 * CatBoost for Apache Spark videos: [Introduction](https://youtu.be/47-mAVms-b8) and [Architecture](https://youtu.be/nrGt5VKZpzc)
 
-If you cannot open documentation in your browser try adding yastatic.net and yastat.net to the list of allowed domains in your privacy badger. 
+If you cannot open documentation in your browser try adding yastatic.net and yastat.net to the list of allowed domains in your privacy badger.
 
-Catboost models in production
+CatBoost models in production
 --------------
-If you want to evaluate Catboost model in your application read [model api documentation](https://github.com/catboost/catboost/tree/master/catboost/CatboostModelAPI.md).
+If you want to evaluate CatBoost model in your application read [model api documentation](https://github.com/catboost/catboost/tree/master/catboost/CatboostModelAPI.md).
 
 Questions and bug reports
 --------------
 * For reporting bugs please use the [catboost/bugreport](https://github.com/catboost/catboost/issues) page.
+* Ask a question on [CatBoost GitHub Discussions Q&A forum](https://github.com/catboost/catboost/discussions/categories/q-a).
 * Ask a question on [Stack Overflow](https://stackoverflow.com/questions/tagged/catboost) with the catboost tag, we monitor this for new questions.
 * Seek prompt advice at [Telegram group](https://t.me/catboost_en) or Russian-speaking [Telegram chat](https://t.me/catboost_ru)
 
@@ -59,9 +60,7 @@ Help to Make CatBoost Better
 ----------------------------
 * Check out [open problems](https://github.com/catboost/catboost/blob/master/open_problems/open_problems.md) and [help wanted issues](https://github.com/catboost/catboost/labels/help%20wanted) to see what can be improved, or open an issue if you want something.
 * Add your stories and experience to [Awesome CatBoost](AWESOME.md).
-* To contribute to CatBoost you need to first read CLA text and add to your pull request, that you agree to the terms of the CLA. More information can be found
-in [CONTRIBUTING.md](https://github.com/catboost/catboost/blob/master/CONTRIBUTING.md)
-* Instructions for contributors can be found [here](https://catboost.ai/docs/concepts/development-and-contributions.html).
+* [Instructions for contributors](https://github.com/catboost/catboost/blob/master/CONTRIBUTING.md).
 
 News
 --------------
@@ -76,4 +75,4 @@ at NIPS 2017.
 
 License
 -------
-© YANDEX LLC, 2017-2024. Licensed under the Apache License, Version 2.0. See LICENSE file for more details.
+© YANDEX LLC, 2017-2025. Licensed under the Apache License, Version 2.0. See LICENSE file for more details.

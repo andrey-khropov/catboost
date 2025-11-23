@@ -19,6 +19,7 @@ target_link_libraries(catboost-private-libs-feature_estimator-ut PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-testing-unittest_main
   private-libs-feature_estimator
   private-libs-text_features
@@ -26,7 +27,7 @@ target_link_libraries(catboost-private-libs-feature_estimator-ut PUBLIC
 )
 
 target_allocator(catboost-private-libs-feature_estimator-ut
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(catboost-private-libs-feature_estimator-ut PRIVATE

@@ -2,7 +2,7 @@
 
 #include <library/cpp/dbg_output/dump.h>
 
-#include <util/generic/bt_exception.h>
+#include <util/generic/yexception.h>
 #include <util/generic/hash.h>
 #include <util/generic/intrlist.h>
 #include <util/generic/map.h>
@@ -42,7 +42,7 @@ namespace NUnitTest {
 
     extern bool ShouldColorizeDiff;
     TString ColoredDiff(TStringBuf s1, TStringBuf s2, const TString& delims = TString(), bool reverse = false);
-    TString GetFormatTag(const char* name);
+    TString GetFormatTag(TStringBuf name);
     TString GetResetTag();
 
     // Raise error handler
@@ -714,6 +714,7 @@ public:                       \
 //values
 #define UNIT_ASSERT_VALUES_EQUAL_IMPL(A, B, C, EQflag, EQstr, NEQstr)                                                                  \
     do {                                                                                                                               \
+        /* NOLINTBEGIN(bugprone-reserved-identifier, readability-identifier-naming) */                                                 \
         TString _as;                                                                                                                   \
         TString _bs;                                                                                                                   \
         TString _asInd;                                                                                                                \
@@ -727,6 +728,7 @@ public:                       \
             }                                                                                                                          \
             UNIT_FAIL_IMPL("assertion failed", failMsg);                                                                               \
         }                                                                                                                              \
+        /* NOLINTEND(bugprone-reserved-identifier, readability-identifier-naming) */                                                   \
     } while (false)
 
 #define UNIT_ASSERT_VALUES_EQUAL_C(A, B, C) \

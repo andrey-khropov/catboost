@@ -695,8 +695,8 @@ TVector<ui32> TModelTrees::GetTreeLeafCounts() const {
 void TModelTrees::SetScaleAndBias(const TScaleAndBias& scaleAndBias) {
     CB_ENSURE(IsValidFloat(scaleAndBias.Scale), "Invalid scale " << scaleAndBias.Scale);
     TVector<double> bias = scaleAndBias.GetBiasRef();
-    for (auto b: bias) {
-        CB_ENSURE(IsValidFloat(b), "Invalid bias " << b);
+    for (auto i : xrange(bias.size())) {
+        CB_ENSURE(IsValidFloat(bias[i]), "Invalid bias[" << i << "] : " << bias[i]);
     }
     if (bias.empty()) {
         bias.resize(GetDimensionsCount(), 0);

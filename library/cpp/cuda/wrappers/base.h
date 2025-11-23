@@ -1,47 +1,17 @@
 #pragma once
 
-#include "kernel.cuh"
-
 #include <library/cpp/cuda/exception/exception.h>
 
 #include <util/datetime/base.h>
 #include <util/generic/array_ref.h>
+#include <util/generic/noncopyable.h>
+#include <util/generic/ptr.h>
+#include <util/generic/string.h>
+#include <util/generic/yexception.h>
+#include <util/stream/output.h>
 
 #include <cuda_runtime.h>
 
-#define CUDA_SAFE_CALL(statement)                                                                                    \
-    {                                                                                                                \
-        cudaError_t errorCode = statement;                                                                           \
-        if (errorCode != cudaSuccess && errorCode != cudaErrorCudartUnloading) {                                     \
-            ythrow TCudaException(errorCode) << "CUDA error " << (int)errorCode << ": " << cudaGetErrorString(errorCode); \
-        }                                                                                                            \
-    }
-
-#ifdef _MSC_VER
-#define CUDA_DISABLE_4297_WARN __pragma(warning(push)); __pragma(warning(disable:4297))
-#define CUDA_RESTORE_WARNINGS __pragma(warning(pop))
-#elif defined(__GNUC__) || defined(__clang__)
-#define CUDA_DISABLE_4297_WARN _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wexceptions\"")
-#define CUDA_RESTORE_WARNINGS _Pragma("GCC diagnostic pop")
-#else
-#define CUDA_DISABLE_4297_WARN
-#define CUDA_RESTORE_WARNINGS
-#endif
-
-#define CUDA_SAFE_CALL_FOR_DESTRUCTOR(statement)                                                                                    \
-    {                                                                                                                \
-        cudaError_t errorCode = statement;                                                                           \
-        if (errorCode != cudaSuccess && errorCode != cudaErrorCudartUnloading) {                                     \
-            if (UncaughtException()) {                                                                               \
-                Cerr << "Got CUDA error " << (int)errorCode << ": " << cudaGetErrorString(errorCode);                \
-                Cerr << " while processing exception: " << CurrentExceptionMessage() << Endl;                        \
-            } else {                                                                                                 \
-                CUDA_DISABLE_4297_WARN                                                                               \
-                ythrow TCudaException(errorCode) << "CUDA error " << (int)errorCode << ": " << cudaGetErrorString(errorCode); \
-                CUDA_RESTORE_WARNINGS                                                                                 \
-            }                                                                                                        \
-        }                                                                                                            \
-    }
 
 class TCudaEvent;
 
@@ -127,10 +97,18 @@ inline void DeviceSynchronize() {
     CUDA_SAFE_CALL(cudaDeviceSynchronize());
 }
 
+namespace NCuda {
+    inline int GetDevice() {
+        int devId;
+        CUDA_SAFE_CALL(cudaGetDevice(&devId));
+        return devId;
+    }
+}
+
 class TDeviceGuard: private TNonCopyable {
 public:
     TDeviceGuard(int device) {
-        CUDA_SAFE_CALL(cudaGetDevice(&PreviousDevice));
+        PreviousDevice = NCuda::GetDevice();
         if (device != PreviousDevice) {
             CUDA_SAFE_CALL(cudaSetDevice(device));
         } else {
@@ -149,7 +127,6 @@ private:
 };
 
 
-//return 0 if success and 1 otherwise
 void GetMemoryInfo(int device, size_t* available, size_t* total);
 int GetDeviceCount();
 
@@ -171,7 +148,7 @@ private:
     TString Message_;
     TInstant Start;
 };
-//
+
 
 template <class T>
 inline void ClearMemoryAsync(TArrayRef<T> data, TCudaStream stream) {

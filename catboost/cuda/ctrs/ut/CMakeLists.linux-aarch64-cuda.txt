@@ -19,6 +19,7 @@ target_link_libraries(catboost-cuda-ctrs-ut PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-testing-unittest_main
   catboost-cuda-ctrs
   catboost-libs-helpers
@@ -27,7 +28,7 @@ target_link_libraries(catboost-cuda-ctrs-ut PUBLIC
 )
 
 target_allocator(catboost-cuda-ctrs-ut
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(catboost-cuda-ctrs-ut PRIVATE
@@ -75,7 +76,7 @@ set_yunittest_property(
   catboost-cuda-ctrs-ut
   PROPERTY
   LABELS
-  SMALL
+  LARGE
 )
 
 set_yunittest_property(

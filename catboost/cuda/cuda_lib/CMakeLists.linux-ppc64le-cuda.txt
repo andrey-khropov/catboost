@@ -24,12 +24,12 @@ target_link_libraries(catboost-cuda-cuda_lib PUBLIC
   catboost-libs-helpers
   catboost-libs-logging
   library-cpp-blockcodecs
+  cpp-cuda-exception
   cpp-cuda-wrappers
   cpp-threading-future
   cpp-threading-local_executor
   cpp-threading-name_guard
-  cpp-deprecated-atomic
-  build-platform-cuda
+  internal-platform-cuda
 )
 
 target_sources(catboost-cuda-cuda_lib PRIVATE
@@ -106,12 +106,12 @@ target_link_libraries(catboost-cuda-cuda_lib.global PUBLIC
   catboost-libs-helpers
   catboost-libs-logging
   library-cpp-blockcodecs
+  cpp-cuda-exception
   cpp-cuda-wrappers
   cpp-threading-future
   cpp-threading-local_executor
   cpp-threading-name_guard
-  cpp-deprecated-atomic
-  build-platform-cuda
+  internal-platform-cuda
 )
 
 target_sources(catboost-cuda-cuda_lib.global PRIVATE

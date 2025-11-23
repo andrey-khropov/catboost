@@ -45,8 +45,15 @@
 
 - CLI
 
-  1. Install [testpath](https://pypi.org/project/testpath/), [pytest](https://pytest.org/), [pandas](https://pypi.org/project/pandas/) and [catboost](https://pypi.org/project/catboost/) (used for reading column description files using `catboost.utils.read_cd`) packages for the python interpreter you intend to use.
+  1. Install [pytest](https://pytest.org/), [pandas](https://pypi.org/project/pandas/) and [catboost](https://pypi.org/project/catboost/) (used for reading column description files using `catboost.utils.read_cd`) packages for the python interpreter you intend to use.
     Optionally install [pytest-xdist](https://pytest-xdist.readthedocs.io/en/stable/) and [pytest-randomly](https://github.com/pytest-dev/pytest-randomly) to run tests in parallel (it will be faster).
+
+      {% cut "Previous requirements" %}
+
+      Before revision [37a15c4](https://github.com/catboost/catboost/commit/37a15c44f323645b844abb983f2c3ecd0953554a), it was necessary to additionally install [testpath](https://pypi.org/project/testpath/) package.
+
+      {% endcut %}
+
   1. [Build](build-from-source#build-cmake) the CLI binary (target `catboost` for Ninja or another build tool) and a supplementary tool that is used to compare results generated as tests output with the canonical ones (target `limited_precision_dsv_diff` for Ninja or another build tool).
   1. Set the following environment variables:
       - `CMAKE_SOURCE_DIR` to the root of the local copy of the {{ product }} repository.
@@ -61,8 +68,15 @@
 
   Tests will check `catboost` module for the `python` interpreter you run them with, so if you want to test `catboost` python package built from source [build and install it first](../installation/python-installation-method-build-from-source#installation).
 
-  1. Install [testpath](https://pypi.org/project/testpath/), [pytest](https://pytest.org/), [pandas](https://pypi.org/project/pandas/), [ipywidgets](https://pypi.org/project/ipywidgets/) and [scikit-learn](https://pypi.org/project/scikit-learn/) packages for the python interpreter you intend to use.
+  1. Install [pytest](https://pytest.org/), [pandas](https://pypi.org/project/pandas/), [ipywidgets](https://pypi.org/project/ipywidgets/) and [scikit-learn](https://pypi.org/project/scikit-learn/) packages for the python interpreter you intend to use.
     Optionally install [pytest-xdist](https://pytest-xdist.readthedocs.io/en/stable/) and [pytest-randomly](https://github.com/pytest-dev/pytest-randomly) to run tests in parallel (it will be faster).
+
+      {% cut "Previous requirements" %}
+
+      Before revision [37a15c4](https://github.com/catboost/catboost/commit/37a15c44f323645b844abb983f2c3ecd0953554a), it was necessary to additionally install [testpath](https://pypi.org/project/testpath/) package.
+
+      {% endcut %}
+
   1. [Build](build-from-source#build-cmake) supplementary tools that are used to compare results generated as tests output with the canonical ones (targets `limited_precision_dsv_diff`, `limited_precision_json_diff`, `model_comparator` for Ninja or another build tool).
   1. Set the following environment variables:
       - `CMAKE_SOURCE_DIR` to the root of the local copy of the {{ product }} repository.
@@ -217,6 +231,6 @@ The following coding conventions must be followed in order to successfully contr
 Do not change the package version when submitting pull requests. Yandex uses an internal repository for this purpose.
 
 
-## Yandex Contributor License Agreement {#yandex-cla}
+## License
 
-To contribute to {{ product }} you need to read the Yandex CLA and indicate that you agree to its terms. Details of how to do that and the text of the CLA can be found in [CONTRIBUTING.md](https://github.com/catboost/catboost/blob/master/CONTRIBUTING.md).
+By contributing to this project, you agree that your contributions will be licensed under [the Apache 2.0 license](https://github.com/catboost/catboost/blob/master/LICENSE).

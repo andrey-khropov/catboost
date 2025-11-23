@@ -19,13 +19,14 @@ target_link_libraries(archiver PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   library-cpp-archive
   cpp-digest-md5
   cpp-getopt-small
 )
 
 target_allocator(archiver
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(archiver PRIVATE
