@@ -437,15 +437,7 @@ def get_cuda_root_dir(cuda_root_dir_option: Optional[str]) -> str:
         raise RuntimeError('No cuda_root_dir specified and CUDA_PATH and CUDA_ROOT environment variables also not defined')
     return cuda_root_dir
 
-def add_cuda_bin_path_to_system_path(
-    build_environ,
-    cuda_root_dir: str,
-    cmake_platform_to_root_path: Optional[Dict[str,str]]
-):
-    # because we need a compiler for the host platform and CMAKE_FIND_ROOT_PATH_MODE_PROGRAM = NEVER mode is used
-    if cmake_platform_to_root_path:
-        cuda_root_dir = os.path.join(cmake_platform_to_root_path[get_host_platform()], cuda_root_dir)
-
+def add_cuda_bin_path_to_system_path(build_environ, cuda_root_dir: str):
     cuda_bin_dir = os.path.join(cuda_root_dir, 'bin')
     if platform.system().lower() == 'windows':
         if 'Path' in build_environ:
@@ -473,7 +465,7 @@ def get_default_build_platform_toolchain(source_root_dir: str) -> str:
     else:
         return os.path.abspath(os.path.join(source_root_dir, 'build', 'toolchains', 'clang.toolchain'))
 
-def get_build_environ(opts: Opts, target_platform: str, cmake_platform_to_root_path: Optional[Dict[str,str]], cmd_runner: CmdRunner):
+def get_build_environ(opts: Opts, target_platform: str, cmd_runner: CmdRunner):
     if platform.system().lower() == 'windows':
         # Need vcvars set up for Ninja generator
         build_environ = get_msvc_environ(
@@ -494,7 +486,7 @@ def get_build_environ(opts: Opts, target_platform: str, cmake_platform_to_root_p
     if opts.have_cuda:
         cuda_root_dir = get_cuda_root_dir(opts.cuda_root_dir)
         # CMake requires nvcc to be available in $PATH
-        add_cuda_bin_path_to_system_path(build_environ, cuda_root_dir, cmake_platform_to_root_path)
+        add_cuda_bin_path_to_system_path(build_environ, cuda_root_dir)
 
     # this environment variable can be used in conan profiles to avoid profile duplication
     build_environ['CMAKE_BUILD_TYPE'] = opts.build_type
@@ -568,7 +560,7 @@ def build(
     else:
         cmake_target_toolchain = opts.cmake_target_toolchain
 
-    build_environ = get_build_environ(opts, target_platform, cmake_platform_to_root_path, cmd_runner)
+    build_environ = get_build_environ(opts, target_platform, cmd_runner)
 
     # can be empty if called for tools build
     catboost_components = get_catboost_components(opts.targets)
@@ -623,7 +615,7 @@ def build(
     if opts.have_cuda:
         cuda_root_dir = get_cuda_root_dir(opts.cuda_root_dir)
         cmake_cmd += [
-            f'-DCUDAToolkit_ROOT={cuda_root_dir}',
+            f'-DCUDAToolkit_ROOT={os.path.splitdrive(cuda_root_dir)[1] if cmake_platform_to_root_path is not None else cuda_root_dir}',
             f'-DCMAKE_CUDA_RUNTIME_LIBRARY={opts.cuda_runtime_library}'
         ]
 
