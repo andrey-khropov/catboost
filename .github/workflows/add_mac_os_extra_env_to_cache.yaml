@@ -61,7 +61,7 @@ jobs:
           brew install openssl readline sqlite3 xz zlib tcl-tk@8 libb2
           brew install pyenv
 
-          pyenv install 3.8.18
+          pyenv install -v 3.8.18
           cd $HOME/.pyenv/versions/ && ln -s 3.8.18 ./3.8
           pyenv install 3.9.19
           cd $HOME/.pyenv/versions/ && ln -s 3.9.19 ./3.9
