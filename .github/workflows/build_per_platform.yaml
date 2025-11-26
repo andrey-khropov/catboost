@@ -123,7 +123,7 @@ jobs:
         name: Setup JDK 8 on macOS
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: 'zulu'
           java-version: '8'
           java-package: jdk
           cache: 'maven'
