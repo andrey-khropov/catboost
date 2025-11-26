@@ -61,6 +61,9 @@ jobs:
           brew install openssl readline sqlite3 xz zlib tcl-tk@8 libb2
           brew install pyenv
 
+          export CFLAGS="-I$(brew --prefix openssl)/include -I$(brew --prefix bzip2)/include -I$(brew --prefix readline)/include -I$(xcrun --show-sdk-path)/usr/include"
+          export LDFLAGS="-L$(brew --prefix openssl)/lib -L$(brew --prefix readline)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix bzip2)/lib"
+
           pyenv install -v 3.8.18
           cd $HOME/.pyenv/versions/ && ln -s 3.8.18 ./3.8
           pyenv install 3.9.19
