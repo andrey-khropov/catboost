@@ -12,7 +12,8 @@ jobs:
     name: Add MacOS Arm64 extra env to cache
     runs-on: macos-14
     steps:
-      - name: Install pyenv and python versions and pack to zip file
+      - if: false
+        name: Install pyenv and python versions and pack to zip file
         run: |
           brew install pyenv
 
@@ -57,6 +58,7 @@ jobs:
     steps:
       - name: Install pyenv and python versions and pack to zip file
         run: |
+          brew install openssl readline sqlite3 xz zlib tcl-tk@8 libb2
           brew install pyenv
 
           pyenv install 3.8.18
