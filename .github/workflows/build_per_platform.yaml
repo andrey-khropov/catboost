@@ -303,7 +303,7 @@ jobs:
           # python ./ci/build_all.py --build-test-tools --target-platforms ${{ inputs.target_platform }}
 
           cd catboost/catboost/python-package
-          $CMAKE_BUILD_ENV_ROOT/darwin-arm64/Python/3.8/bin/python setup.py bdist_wheel --plat-name macosx_11_0_universal2 --with-hnsw
+          $Env:CMAKE_BUILD_ENV_ROOT/darwin-arm64/Python/3.8/bin/python setup.py bdist_wheel --plat-name macosx_11_0_universal2 --with-hnsw
 
 
       - name: Save commit id to CMake build cache
