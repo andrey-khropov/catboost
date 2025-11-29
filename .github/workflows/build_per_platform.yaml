@@ -167,7 +167,7 @@ jobs:
 
               # the venv name is just ${PY_VER}
               ${PYTHON_BIN_PATH} -m venv ${PY_VER}
-              ./${PY_VER}/bin/python -m pip install --upgrade pip setuptools wheel numpy cython==3.0.12
+              ./${PY_VER}/bin/python -m pip install --upgrade pip setuptools build wheel numpy cython==3.0.12
           done
 
           mkdir -p $CMAKE_BUILD_ENV_ROOT/darwin-x86_64
@@ -228,7 +228,7 @@ jobs:
           New-Item -Path .\3.14 -ItemType SymbolicLink -Value "$Env:RUNNER_TOOL_CACHE\Python\3.14.*\x64"
 
           foreach($PY_VER in '3.8','3.9','3.10','3.11','3.12','3.13','3.14') {
-            & "$CMAKE_BUILD_ENV_ROOT\windows-x86_64\Python\$PY_VER\python.exe" -m pip install --upgrade pip setuptools wheel numpy cython==3.0.12
+            & "$CMAKE_BUILD_ENV_ROOT\windows-x86_64\Python\$PY_VER\python.exe" -m pip install --upgrade pip setuptools build wheel numpy cython==3.0.12
           }
 
           # CUDA
@@ -300,11 +300,7 @@ jobs:
           }
 
           Set-Location -Path catboost
-          # python ./ci/build_all.py --build-test-tools --target-platforms ${{ inputs.target_platform }}
-
-          cd catboost/python-package
-          & $Env:CMAKE_BUILD_ENV_ROOT/darwin-arm64/Python/3.8/bin/python setup.py bdist_wheel --plat-name macosx_11_0_universal2 --with-hnsw
-
+          python ./ci/build_all.py --build-test-tools --target-platforms ${{ inputs.target_platform }}
 
       - name: Save commit id to CMake build cache
         shell: pwsh

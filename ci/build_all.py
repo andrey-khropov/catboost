@@ -617,12 +617,14 @@ def build_python_packages(
 
             # don't pass CUDA_ROOT here because it does not matter when prebuilt extension libraries are used
             bdist_wheel_cmd = [
-                'setup.py',
-                'bdist_wheel',
-                '--plat-name', get_python_plat_name(build_native_wrapper.platform_name),
-                '--with-hnsw',
-                '--prebuilt-widget',
-                f'--prebuilt-extensions-build-root-dir={build_native_sub_dir}'
+                '-m'
+                'build'
+                '--wheel'
+                '--config-setting=--global-option=bdist_wheel',
+                f'--config-setting=--global-option=--plat-name={get_python_plat_name(build_native_wrapper.platform_name)}',
+                '--config-setting=--global-option=--with-hnsw',
+                '--config-setting=--global-option=--prebuilt-widget',
+                f'--config-setting=--global-option=--prebuilt-extensions-build-root-dir={build_native_sub_dir}'
             ]
 
             run_with_native_python_with_version_in_python_package_dir(
