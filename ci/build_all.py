@@ -619,7 +619,12 @@ def build_python_packages(
             bdist_wheel_cmd = [
                 '-m',
                 'build',
-                '--wheel',
+                '--wheel'
+            ]
+            if IS_IN_GITHUB_ACTION:
+                # we've already prepared the environment and there are issues with downloading packages on Linux
+                bdist_wheel_cmd += ['--no-build-isolation']
+            bdist_wheel_cmd += [
                 '--config-setting=--global-option=bdist_wheel',
                 f'--config-setting=--global-option=--plat-name={get_python_plat_name(build_native_wrapper.platform_name)}',
                 '--config-setting=--global-option=--with-hnsw',
