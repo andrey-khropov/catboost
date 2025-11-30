@@ -617,9 +617,9 @@ def build_python_packages(
 
             # don't pass CUDA_ROOT here because it does not matter when prebuilt extension libraries are used
             bdist_wheel_cmd = [
-                '-m'
-                'build'
-                '--wheel'
+                '-m',
+                'build',
+                '--wheel',
                 '--config-setting=--global-option=bdist_wheel',
                 f'--config-setting=--global-option=--plat-name={get_python_plat_name(build_native_wrapper.platform_name)}',
                 '--config-setting=--global-option=--with-hnsw',
