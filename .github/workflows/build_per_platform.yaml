@@ -167,7 +167,7 @@ jobs:
 
               # the venv name is just ${PY_VER}
               ${PYTHON_BIN_PATH} -m venv ${PY_VER}
-              ./${PY_VER}/bin/python -m pip install --upgrade pip setuptools build wheel numpy cython==3.0.12
+              ./${PY_VER}/bin/python -m pip install --upgrade pip setuptools build wheel numpy cython==3.0.12 conan==2.15.1 jupyterlab==3.0.6 cmake==3.24.0
           done
 
           mkdir -p $CMAKE_BUILD_ENV_ROOT/darwin-x86_64
@@ -228,7 +228,7 @@ jobs:
           New-Item -Path .\3.14 -ItemType SymbolicLink -Value "$Env:RUNNER_TOOL_CACHE\Python\3.14.*\x64"
 
           foreach($PY_VER in '3.8','3.9','3.10','3.11','3.12','3.13','3.14') {
-            & "$CMAKE_BUILD_ENV_ROOT\windows-x86_64\Python\$PY_VER\python.exe" -m pip install --upgrade pip setuptools build wheel numpy cython==3.0.12
+            & "$CMAKE_BUILD_ENV_ROOT\windows-x86_64\Python\$PY_VER\python.exe" -m pip install --upgrade pip setuptools build wheel numpy cython==3.0.12 conan==2.4.1 jupyterlab==3.0.6 cmake==3.24.0
           }
 
           # CUDA
