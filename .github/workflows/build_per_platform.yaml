@@ -305,93 +305,93 @@ jobs:
           path: catboost/catboost/python-package/build/widget
           retention-days: ${{ inputs.artifact_retention_days }}
 
-      # R package
+      # # R package
 
-      - name: 'Upload artifact: R package'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catboost-R-package-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
-          path: catboost/catboost/R-package/catboost-R-${{ inputs.target_platform }}.tgz
-          retention-days: ${{ inputs.artifact_retention_days }}
+      # - name: 'Upload artifact: R package'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: catboost-R-package-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
+      #     path: catboost/catboost/R-package/catboost-R-${{ inputs.target_platform }}.tgz
+      #     retention-days: ${{ inputs.artifact_retention_days }}
 
-      # catboostmodel
+      # # catboostmodel
 
-      - if: inputs.os == 'linux'
-        name: 'Upload artifact: catboostmodel library for Linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catboost-model-interface-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
-          path: catboost/build_native_root/have_cuda/${{ inputs.target_platform }}/catboost/libs/model_interface/libcatboostmodel.*
-          retention-days: ${{ inputs.artifact_retention_days }}
+      # - if: inputs.os == 'linux'
+      #   name: 'Upload artifact: catboostmodel library for Linux'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: catboost-model-interface-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
+      #     path: catboost/build_native_root/have_cuda/${{ inputs.target_platform }}/catboost/libs/model_interface/libcatboostmodel.*
+      #     retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'macos'
-        name: 'Upload artifact: catboostmodel library for macOS universal2'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catboost-model-interface-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
-          path: catboost/build_native_root/no_cuda/${{ inputs.target_platform }}/catboost/libs/model_interface/libcatboostmodel.*
-          retention-days: ${{ inputs.artifact_retention_days }}
+      # - if: inputs.os == 'macos'
+      #   name: 'Upload artifact: catboostmodel library for macOS universal2'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: catboost-model-interface-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
+      #     path: catboost/build_native_root/no_cuda/${{ inputs.target_platform }}/catboost/libs/model_interface/libcatboostmodel.*
+      #     retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'windows'
-        name: 'Upload artifact: catboostmodel library for Windows x86_64'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catboost-model-interface-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
-          path: |
-            catboost/build_native_root/have_cuda/${{ inputs.target_platform }}/catboost/libs/model_interface/catboostmodel.dll
-            catboost/build_native_root/have_cuda/${{ inputs.target_platform }}/catboost/libs/model_interface/catboostmodel.lib
-          retention-days: ${{ inputs.artifact_retention_days }}
+      # - if: inputs.os == 'windows'
+      #   name: 'Upload artifact: catboostmodel library for Windows x86_64'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: catboost-model-interface-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
+      #     path: |
+      #       catboost/build_native_root/have_cuda/${{ inputs.target_platform }}/catboost/libs/model_interface/catboostmodel.dll
+      #       catboost/build_native_root/have_cuda/${{ inputs.target_platform }}/catboost/libs/model_interface/catboostmodel.lib
+      #     retention-days: ${{ inputs.artifact_retention_days }}
 
-      # Spark
+      # # Spark
 
-      - name: 'Upload artifact: catboost4j-spark-impl-sources'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catboost4j-spark-impl-sources-${{ inputs.artifacts_version }}
-          path: catboost/catboost/spark/catboost4j-spark/core/target/catboost4j-spark-impl-sources.jar
-          retention-days: ${{ inputs.artifact_retention_days }}
-          overwrite: true
+      # - name: 'Upload artifact: catboost4j-spark-impl-sources'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: catboost4j-spark-impl-sources-${{ inputs.artifacts_version }}
+      #     path: catboost/catboost/spark/catboost4j-spark/core/target/catboost4j-spark-impl-sources.jar
+      #     retention-days: ${{ inputs.artifact_retention_days }}
+      #     overwrite: true
 
-      - name: 'Upload artifact: catboost4j-spark_core_resources_classes'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catboost4j-spark_core_resources_classes-${{ inputs.artifacts_version }}
-          path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/ru*
-          retention-days: ${{ inputs.artifact_retention_days }}
-          overwrite: true
+      # - name: 'Upload artifact: catboost4j-spark_core_resources_classes'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: catboost4j-spark_core_resources_classes-${{ inputs.artifacts_version }}
+      #     path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/ru*
+      #     retention-days: ${{ inputs.artifact_retention_days }}
+      #     overwrite: true
 
-      - if: inputs.os == 'linux'
-        name: 'Upload artifact: catboost4j-spark_core_resources-linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catboost4j-spark_core_resources-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
-          path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/linux*
-          retention-days: ${{ inputs.artifact_retention_days }}
+      # - if: inputs.os == 'linux'
+      #   name: 'Upload artifact: catboost4j-spark_core_resources-linux'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: catboost4j-spark_core_resources-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
+      #     path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/linux*
+      #     retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'macos'
-        name: 'Upload artifact: catboost4j-spark_core_resources-darwin'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catboost4j-spark_core_resources-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
-          path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/darwin*
-          retention-days: ${{ inputs.artifact_retention_days }}
+      # - if: inputs.os == 'macos'
+      #   name: 'Upload artifact: catboost4j-spark_core_resources-darwin'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: catboost4j-spark_core_resources-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
+      #     path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/darwin*
+      #     retention-days: ${{ inputs.artifact_retention_days }}
 
-      - if: inputs.os == 'windows'
-        name: 'Upload artifact: catboost4j-spark_core_resources-windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catboost4j-spark_core_resources-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
-          path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/win*
-          retention-days: ${{ inputs.artifact_retention_days }}
+      # - if: inputs.os == 'windows'
+      #   name: 'Upload artifact: catboost4j-spark_core_resources-windows'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: catboost4j-spark_core_resources-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
+      #     path: catboost/catboost/spark/catboost4j-spark/core/src/main/resources/win*
+      #     retention-days: ${{ inputs.artifact_retention_days }}
 
-      # catboost-prediction
+      # # catboost-prediction
 
-      - name: 'Upload artifact: catboost4j-prediction_resources'
-        uses: actions/upload-artifact@v4
-        with:
-          name: catboost4j-prediction_resources-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
-          path: catboost/catboost/jvm-packages/catboost4j-prediction/src/main/resources/*
-          retention-days: ${{ inputs.artifact_retention_days }}
+      # - name: 'Upload artifact: catboost4j-prediction_resources'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: catboost4j-prediction_resources-${{ inputs.target_platform }}-${{ inputs.artifacts_version }}
+      #     path: catboost/catboost/jvm-packages/catboost4j-prediction/src/main/resources/*
+      #     retention-days: ${{ inputs.artifact_retention_days }}
 
       # test tools
 
