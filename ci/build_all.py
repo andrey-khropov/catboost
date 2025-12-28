@@ -37,13 +37,13 @@ from typing import List, Tuple, Optional
 IS_IN_GITHUB_ACTION = 'GITHUB_ACTION' in os.environ
 
 PYTHON_VERSIONS = [
-    (3,8),
-    (3,9),
-    (3,10),
-    (3,11),
+    #(3,8),
+    #(3,9),
+    #(3,10),
+    #(3,11),
     (3,12),
-    (3,13),
-    (3,14),
+    #(3,13),
+    #(3,14),
 ]
 
 MSVS_VERSION = '2022'
@@ -688,7 +688,7 @@ def build_all_for_one_platform(
     # and SWIG (which is always w/o CUDA) and includes JVM-only 'catboost4j-spark-impl'
     all_catboost_targets_except_python_and_spark=[
         target for target in build_native.Targets.catboost.keys()
-        if target not in ['_hnsw', '_catboost', 'catboost4j-spark-impl', 'catboost4j-spark-impl-cpp']
+        if target not in ['_hnsw', '_catboost', 'catboost4j-spark-impl', 'catboost4j-spark-impl-cpp', 'catboostr']
     ]
 
     build_with_cuda_for_main_targets = need_to_build_with_cuda_for_main_targets(platform_name)
@@ -769,7 +769,7 @@ def build_all_for_one_platform(
     )
 
 
-    targets_wo_cuda = ['catboost4j-spark-impl-cpp']
+    targets_wo_cuda = [] #'catboost4j-spark-impl-cpp']
     if build_test_tools:
         targets_wo_cuda += build_native.Targets.test_tools.keys()
 
@@ -812,25 +812,25 @@ def build_all_for_one_platform(
             verbose=verbose
         )
 
-    if not only_native_artifacts:
-        build_r_package(
-            src_root_dir,
-            build_native_root_dir,
-            build_with_cuda_for_main_targets,
-            platform_name,
-            dry_run,
-            verbose
-        )
+    # if not only_native_artifacts:
+    #     build_r_package(
+    #         src_root_dir,
+    #         build_native_root_dir,
+    #         build_with_cuda_for_main_targets,
+    #         platform_name,
+    #         dry_run,
+    #         verbose
+    #     )
 
-        build_jvm_artifacts(
-            src_root_dir,
-            build_native_root_dir,
-            platform_name,
-            macos_universal_binaries,
-            build_with_cuda_for_main_targets,
-            dry_run,
-            verbose
-        )
+    #     build_jvm_artifacts(
+    #         src_root_dir,
+    #         build_native_root_dir,
+    #         platform_name,
+    #         macos_universal_binaries,
+    #         build_with_cuda_for_main_targets,
+    #         dry_run,
+    #         verbose
+    #     )
 
 
 def build_all(
