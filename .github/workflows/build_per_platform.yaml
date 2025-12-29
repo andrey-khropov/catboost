@@ -135,6 +135,14 @@ jobs:
             catboost/catboost/spark/catboost4j-spark/projects/**/pom.xml
 
 
+      # Python 3.8 is not included in 'macos-14' and 'windows-2022' images.
+      - if: inputs.os != 'linux'
+        name: Install python3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+          update-environment: false
+
       - if: inputs.os == 'macos'
         name: Env setup on macOS
         run: |
