@@ -244,6 +244,20 @@ jobs:
           $CUDA_PATH_WO_DRIVE_AND_ROOT = (Split-Path "${{steps.cuda-toolkit.outputs.CUDA_PATH}}" -NoQualifier).TrimStart('\/')
           New-Item -Path $CUDA_PATH_WO_DRIVE_AND_ROOT -ItemType SymbolicLink -Value "${{steps.cuda-toolkit.outputs.CUDA_PATH}}" -Force
 
+          # MSVC toolset v14.40
+          $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          $InstallerPath = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe"
+
+          $components = @(
+            "Microsoft.VisualStudio.Component.VC.14.40.x86.x64",
+          )
+
+          $args = "modify --installPath `"$InstallPath`""
+          foreach ($comp in $components) { $args += " --add $comp" }
+          $args += " --quiet --norestart --nocache"
+
+          Start-Process -FilePath $InstallerPath -ArgumentList $args -Wait -PassThru
+
 
       - name: Update CMake build cache on every commit
         uses: actions/cache@v4
