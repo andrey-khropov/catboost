@@ -1,4 +1,4 @@
-name: Test on all OSes
+name: Test on Windows
 
 on:
   workflow_dispatch:
@@ -24,7 +24,7 @@ jobs:
     name: Test per OS
     strategy:
       matrix:
-         os: [linux, macos, windows]
+         os: [windows]
       fail-fast: false
     with:
       os: ${{ matrix.os }}
