@@ -30,7 +30,7 @@ on:
 env:
   os_to_platforms_map: |
     {
-      "linux": ["linux-x86_64-on-22.04", "linux-x86_64-on-24.04"]],
+      "linux": ["linux-x86_64-on-22.04", "linux-x86_64-on-24.04"],
       "macos": ["darwin-universal2"],
       "windows": ["windows-x86_64"]
     }
