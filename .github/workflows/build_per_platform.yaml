@@ -61,22 +61,28 @@ jobs:
           sparse-checkout: .github
           fetch-depth: 0
 
-      - name: Check global disk space
-        run: df -h
+      #- name: Check global disk space
+      #  run: df -h
 
       - if: inputs.os == 'linux'
         name: 'Maximize build space: stage 1'
         # Remove packages & tools cache not covered by easimon/maximize-build-space action
         uses: ./actions_from_catboost/.github/actions/build_linux_docker_cleanup_unneeded
 
-      - name: List packages by installed size
-        run: dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n
+      #- name: List packages by installed size
+      #  run: dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n
 
-      - name: Check global disk space after stage 1
-        run: df -h
+      #- name: Check global disk space after stage 1
+      #  run: df -h
 
       - name: Check disk space at root after stage 1
-        run: sudo du -hcd 1 /
+        run: |
+          echo '------------usr'
+          sudo du -hcd 1 /usr/
+          echo '------------opt'
+          sudo du -hcd 1 /opt/
+          echo '------------home'
+          sudo du -hcd 1 /opt/
 
 
       # - if: inputs.os == 'linux'
