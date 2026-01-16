@@ -37,15 +37,10 @@ env:
 
   platform_to_specs_map: |
     {
-      "linux-x86_64-on-22.04" : {
+      "linux-x86_64" : {
         "executable_suffix": "",
         "python_platform_tag": "manylinux2014_x86_64",
         "runs_on": "ubuntu-22.04"
-      },
-      "linux-x86_64-on-24.04" : {
-        "executable_suffix": "",
-        "python_platform_tag": "manylinux2014_x86_64",
-        "runs_on": "ubuntu-24.04"
       },
       "darwin-universal2" : {
         "executable_suffix": "",
