@@ -78,11 +78,14 @@ jobs:
       - name: Check disk space at root after stage 1
         run: |
           echo '------------usr'
-          sudo du -hcd 1 /usr/
+          sudo du -hcd 1 /usr/local/
+          sudo du -hcd 1 /usr/lib/
+          sudo du -hcd 1 /usr/share/
           echo '------------opt'
-          sudo du -hcd 1 /opt/
+          sudo du -hcd 1 /opt/pipx/
+          sudo du -hcd 1 /opt/microsoft/
           echo '------------home'
-          sudo du -hcd 1 /opt/
+          sudo du -hcd 1 /home/
 
 
       # - if: inputs.os == 'linux'
