@@ -532,6 +532,8 @@ function(conan_get_version conan_command conan_current_version)
         OUTPUT_VARIABLE conan_output
         RESULT_VARIABLE conan_result
         OUTPUT_STRIP_TRAILING_WHITESPACE
+        ECHO_OUTPUT_VARIABLE
+        ECHO_ERROR_VARIABLE
     )
     if(conan_result)
         message(FATAL_ERROR "CMake-Conan: Error when trying to run Conan")
