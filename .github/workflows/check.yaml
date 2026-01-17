@@ -3,7 +3,7 @@ name: Check build and tests
 on:
   push:
     branches:
-      - master
+      - github_actions_debug_windows
 
   pull_request:
 
@@ -12,7 +12,7 @@ jobs:
     name: Check per OS
     strategy:
       matrix:
-        os: [linux, macos, windows]
+        os: [windows]
       fail-fast: false
     with:
       os: ${{ matrix.os }}
