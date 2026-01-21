@@ -359,7 +359,7 @@ private[spark] object CatBoostTextFileFormat {
       ).resolveRelation()
     ) //.select("value")
 
-    import lines.sqlContext.implicits._
+    // import lines.sqlContext.implicits._
 
     dataScheme match {
       case "dsv" if (hasHeaderParamValue) =>
