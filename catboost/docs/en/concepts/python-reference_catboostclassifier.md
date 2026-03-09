@@ -108,8 +108,13 @@ class CatBoostClassifier(iterations=None,
 
 ## {{ dl--purpose }} {#purpose}
 
-{% include [catboost-classifier-catboostclassifier__purpose-div](../_includes/work_src/reusage-python/catboostclassifier__purpose-div.md) %}
+Training and applying models for the classification problems. Provides compatibility with the scikit-learn tools.
 
+{% include [scikit-learn-compatibility](../_includes/work_src/reusage-python/scikit-learn-compatibility.md) %}
+
+The default optimized objective depends on various conditions:
+- {{ error-function--Logit }} — The target has only two different values or the `target_border` parameter is not None.
+- {{ error-function--MultiClass }} — The target has more than two different values and the `border_count` parameter is None.
 
 ## {{ dl--parameters }} {#parameters}
 
@@ -123,9 +128,10 @@ class CatBoostClassifier(iterations=None,
 
 A one-dimensional array of text columns indices (specified as integers) or names (specified as strings).
 
-Use only if the data parameter is a two-dimensional feature matrix (has one of the following types: list, numpy.ndarray, pandas.DataFrame, pandas.Series).
+Use only if the data parameter is a two-dimensional feature matrix (has one of the following types: list, numpy.ndarray, pandas.DataFrame, pandas.Series, [polars.DataFrame](https://docs.pola.rs/api/python/stable/reference/dataframe/index.html)
+).
 
-If any elements in this array are specified as names instead of indices, names for all columns must be provided. To do this, either use the `feature_names` parameter of this constructor to explicitly specify them or pass a pandas.DataFrame with column names specified in the data parameter.
+If any elements in this array are specified as names instead of indices, names for all columns must be provided. To do this, either use the `feature_names` parameter of this constructor to explicitly specify them or pass a pandas.DataFrame or [polars.DataFrame](https://docs.pola.rs/api/python/stable/reference/dataframe/index.html) with column names specified in the data parameter.
 
 {% include [default-value-none](../_includes/concepts/default-value-none.md) %}
 

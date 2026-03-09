@@ -42,13 +42,13 @@ target_link_libraries(catboost4j-spark-impl-cpp PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-containers-2d_array
   library-cpp-dbg_output
   library-cpp-grid_creator
   library-cpp-jni
   library-cpp-json
   library-cpp-par
-  cpp-threading-atomic
   cpp-threading-local_executor
   catboost-libs-cat_feature
   catboost-libs-column_description

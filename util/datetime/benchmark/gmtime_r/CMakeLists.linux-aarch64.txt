@@ -19,12 +19,13 @@ target_link_libraries(gmtime_r PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-testing-gbenchmark
   util-draft
 )
 
 target_allocator(gmtime_r
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(gmtime_r PRIVATE

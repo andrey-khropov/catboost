@@ -2,11 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "onnx/defs/function.h"
 #include "onnx/defs/schema.h"
-
-#include <algorithm>
-#include <numeric>
 
 namespace ONNX_NAMESPACE {
 static std::vector<std::string> optional_and_tensor_types() {

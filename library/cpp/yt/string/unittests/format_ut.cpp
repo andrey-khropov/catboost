@@ -2,6 +2,7 @@
 
 #include <library/cpp/yt/string/format.h>
 
+#include <library/cpp/yt/compact_containers/compact_flat_map.h>
 #include <library/cpp/yt/compact_containers/compact_vector.h>
 
 #include <util/generic/hash_set.h>
@@ -265,6 +266,19 @@ TEST(TFormatTest, LazyMultiValueFormatter)
         s,
         MakeFormattableView(range, TDefaultFormatter{}));
     EXPECT_EQ("int: 1, string: hello, range: [1, 2, 3]", Format("%v", lazyFormatter));
+}
+
+TEST(TFormatTest, ReusableLambdaFormatter)
+{
+    auto formatter = [&] (auto* builder, int value) {
+        builder->AppendFormat("%v", value);
+    };
+
+    std::vector<int> range1{1, 2, 3};
+    EXPECT_EQ("[1, 2, 3]", Format("%v", MakeFormattableView(range1, formatter)));
+
+    std::vector<int> range2{4, 5, 6};
+    EXPECT_EQ("[4, 5, 6]", Format("%v", MakeFormattableView(range2, formatter)));
 }
 
 TEST(TFormatTest, VectorArg)

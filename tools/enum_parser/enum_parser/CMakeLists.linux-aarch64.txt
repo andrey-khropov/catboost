@@ -19,12 +19,13 @@ target_link_libraries(enum_parser PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-getopt-small
   tools-enum_parser-parse_enum
 )
 
 target_allocator(enum_parser
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(enum_parser PRIVATE

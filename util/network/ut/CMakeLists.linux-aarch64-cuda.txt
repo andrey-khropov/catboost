@@ -19,12 +19,13 @@ target_link_libraries(util-network-ut PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-testing-unittest_main
   cpp-threading-future
 )
 
 target_allocator(util-network-ut
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(util-network-ut PRIVATE

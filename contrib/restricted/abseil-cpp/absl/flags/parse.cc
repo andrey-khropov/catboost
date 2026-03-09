@@ -64,9 +64,9 @@ ABSL_NAMESPACE_BEGIN
 namespace flags_internal {
 namespace {
 
-absl::Mutex* ProcessingChecksMutex() {
+absl::Mutex& ProcessingChecksMutex() {
   static absl::NoDestructor<absl::Mutex> mutex;
-  return mutex.get();
+  return *mutex;
 }
 
 ABSL_CONST_INIT bool flagfile_needs_processing
@@ -76,9 +76,13 @@ ABSL_CONST_INIT bool fromenv_needs_processing
 ABSL_CONST_INIT bool tryfromenv_needs_processing
     ABSL_GUARDED_BY(ProcessingChecksMutex()) = false;
 
-ABSL_CONST_INIT absl::Mutex specified_flags_guard(absl::kConstInit);
+absl::Mutex& SpecifiedFlagsMutex() {
+  static absl::NoDestructor<absl::Mutex> mutex;
+  return *mutex;
+}
+
 ABSL_CONST_INIT std::vector<const CommandLineFlag*>* specified_flags
-    ABSL_GUARDED_BY(specified_flags_guard) = nullptr;
+    ABSL_GUARDED_BY(SpecifiedFlagsMutex()) = nullptr;
 
 // Suggesting at most kMaxHints flags in case of misspellings.
 ABSL_CONST_INIT const size_t kMaxHints = 100;
@@ -202,8 +206,10 @@ bool ArgsList::ReadFromFlagfile(const std::string& flag_file_name) {
 
   std::string line;
   bool success = true;
+  int line_number = 0;
 
   while (std::getline(flag_file, line)) {
+    line_number++;
     absl::string_view stripped = absl::StripLeadingAsciiWhitespace(line);
 
     if (stripped.empty() || stripped[0] == '#') {
@@ -225,8 +231,8 @@ bool ArgsList::ReadFromFlagfile(const std::string& flag_file_name) {
     }
 
     flags_internal::ReportUsageError(
-        absl::StrCat("Unexpected line in the flagfile ", flag_file_name, ": ",
-                     line),
+        absl::StrCat("Unexpected line ", line_number, " in the flagfile ",
+                     flag_file_name),
         true);
 
     success = false;
@@ -640,7 +646,7 @@ void ReportUnrecognizedFlags(
 // --------------------------------------------------------------------
 
 bool WasPresentOnCommandLine(absl::string_view flag_name) {
-  absl::ReaderMutexLock l(&specified_flags_guard);
+  absl::ReaderMutexLock l(SpecifiedFlagsMutex());
   ABSL_INTERNAL_CHECK(specified_flags != nullptr,
                       "ParseCommandLine is not invoked yet");
 
@@ -767,7 +773,7 @@ HelpMode ParseAbseilFlagsOnlyImpl(
   }
   positional_args.push_back(argv[0]);
 
-  absl::MutexLock l(&flags_internal::specified_flags_guard);
+  absl::MutexLock l(flags_internal::SpecifiedFlagsMutex());
   if (specified_flags == nullptr) {
     specified_flags = new std::vector<const CommandLineFlag*>;
   } else {

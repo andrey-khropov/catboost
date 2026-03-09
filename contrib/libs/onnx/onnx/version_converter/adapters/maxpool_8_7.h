@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "onnx/version_converter/adapters/adapter.h"
 
 namespace ONNX_NAMESPACE {
@@ -17,7 +19,7 @@ class MaxPool_8_7 final : public Adapter {
  public:
   explicit MaxPool_8_7() : Adapter("MaxPool", OpSetID(8), OpSetID(7)) {}
 
-  void adapt_maxpool_8_7(std::shared_ptr<Graph>, Node* node) const {
+  void adapt_maxpool_8_7(const std::shared_ptr<Graph>&, Node* node) const {
     const ArrayRef<Value*>& outputs = node->outputs();
     ONNX_ASSERTM(outputs.size() != 2, "Opset version 7 of MaxPool cannot include Indices output");
     if (node->hasAttribute(kstorage_order))

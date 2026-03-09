@@ -2,8 +2,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "onnx/defs/math/utils.h"
 #include "onnx/defs/controlflow/utils.h"
+
+#include <string>
+#include <vector>
 
 namespace ONNX_NAMESPACE {
 
@@ -164,7 +166,7 @@ void LoopInferenceFunction(InferenceContext& ctx) {
       if (is_loop_state_var) {
         // shape may change across iterations so ignore.
       } else {
-        // propogate shape
+        // propagate shape
         if (subgraph_output_type->tensor_type().has_shape()) {
           // per iteration output. first dimension will be number of iterations
           // but we don't know that value yet
@@ -190,7 +192,7 @@ void LoopInferenceFunction(InferenceContext& ctx) {
 }
 
 int handle_negative_axis_validate(const std::string& attrib, int axis, int rank) {
-  if (!(-rank <= axis && axis < rank)) {
+  if (-rank > axis || axis >= rank) {
     fail_shape_inference(attrib, " axis value ", axis, " is invalid for a tensor of rank ", rank);
   }
   return (axis >= 0 ? axis : axis + rank);
@@ -275,8 +277,8 @@ void ScanInferenceFunction(InferenceContext& ctx) {
         const auto& dims = shape.dim();
         mergeInDimensionInfo(dims.Get(axis), sequence_len_dim, 1);
 
-        temporary_type_protos.push_back(RemoveIthDimensionFromShape(*input_type, axis));
-        subgraph_input_types.push_back(&temporary_type_protos.back());
+        temporary_type_protos.emplace_back(RemoveIthDimensionFromShape(*input_type, axis));
+        subgraph_input_types.emplace_back(&temporary_type_protos.back());
 
       } else {
         subgraph_input_types.push_back(input_type);

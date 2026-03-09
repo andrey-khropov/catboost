@@ -13,10 +13,10 @@ namespace NYT {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-YT_DEFINE_STRONG_TYPEDEF(TRefCountedTypeCookie, int)
+YT_DEFINE_STRONG_TYPEDEF(TRefCountedTypeCookie, int);
 constexpr TRefCountedTypeCookie NullRefCountedTypeCookie{-1};
 
-YT_DEFINE_STRONG_TYPEDEF(TRefCountedTypeKey, const std::type_info*)
+YT_DEFINE_STRONG_TYPEDEF(TRefCountedTypeKey, const std::type_info*);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -79,7 +79,7 @@ public:
 #ifdef YT_ENABLE_REF_COUNTED_TRACKING
     TRefTracked();
     TRefTracked(const TRefTracked&);
-    TRefTracked(TRefTracked&&);
+    TRefTracked(TRefTracked&&) noexcept;
     ~TRefTracked();
 #endif
 };

@@ -1,17 +1,21 @@
 # Copyright (c) ONNX Project Contributors
 #
 # SPDX-License-Identifier: Apache-2.0
+from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, NamedTuple, Union, cast
+from typing import Any, NamedTuple, Union, cast
 
 import numpy as np
 
 from onnx import OptionalProto, SequenceProto, TensorProto
 
-TensorDtypeMap = NamedTuple(
-    "TensorDtypeMap", [("np_dtype", np.dtype), ("storage_dtype", int), ("name", str)]
-)
+
+class TensorDtypeMap(NamedTuple):
+    np_dtype: np.dtype
+    storage_dtype: int
+    name: str
+
 
 # tensor_dtype: (numpy type, storage type, string name)
 TENSOR_TYPE_MAP = {
@@ -77,13 +81,23 @@ TENSOR_TYPE_MAP = {
     int(TensorProto.FLOAT8E5M2FNUZ): TensorDtypeMap(
         np.dtype("float32"), int(TensorProto.UINT8), "TensorProto.FLOAT8E5M2FNUZ"
     ),
+    # Native numpy does not support uint4/int4 so now use uint8/int8 for these types.
+    int(TensorProto.UINT4): TensorDtypeMap(
+        np.dtype("uint8"), int(TensorProto.INT32), "TensorProto.UINT4"
+    ),
+    int(TensorProto.INT4): TensorDtypeMap(
+        np.dtype("int8"), int(TensorProto.INT32), "TensorProto.INT4"
+    ),
+    int(TensorProto.FLOAT4E2M1): TensorDtypeMap(
+        np.dtype("float32"), int(TensorProto.UINT8), "TensorProto.FLOAT4E2M1"
+    ),
 }
 
 
-class DeprecatedWarningDict(dict):  # type: ignore
+class DeprecatedWarningDict(dict):
     def __init__(
         self,
-        dictionary: Dict[int, Union[int, str, np.dtype]],
+        dictionary: dict[int, int | str | np.dtype],
         original_function: str,
         future_function: str = "",
     ) -> None:
@@ -99,7 +113,7 @@ class DeprecatedWarningDict(dict):  # type: ignore
             and self._future_function == other._future_function
         )
 
-    def __getitem__(self, key: Union[int, str, np.dtype]) -> Any:
+    def __getitem__(self, key: int | str | np.dtype) -> Any:
         if not self._future_function:
             warnings.warn(
                 str(
@@ -151,13 +165,16 @@ _NP_TYPE_TO_TENSOR_TYPE = {
         TensorProto.FLOAT8E4M3FNUZ,
         TensorProto.FLOAT8E5M2,
         TensorProto.FLOAT8E5M2FNUZ,
+        TensorProto.UINT4,
+        TensorProto.INT4,
+        TensorProto.FLOAT4E2M1,
     )
 }
 
 # Currently native numpy does not support bfloat16 so TensorProto.BFLOAT16 is ignored for now
 # Numpy float32 array is only reversed to TensorProto.FLOAT
 NP_TYPE_TO_TENSOR_TYPE = DeprecatedWarningDict(
-    cast(Dict[int, Union[int, str, Any]], _NP_TYPE_TO_TENSOR_TYPE),
+    cast(dict[int, Union[int, str, Any]], _NP_TYPE_TO_TENSOR_TYPE),
     "NP_TYPE_TO_TENSOR_TYPE",
     "np_dtype_to_tensor_dtype",
 )
@@ -180,7 +197,7 @@ _STORAGE_TENSOR_TYPE_TO_FIELD = {
 }
 
 STORAGE_TENSOR_TYPE_TO_FIELD = DeprecatedWarningDict(
-    cast(Dict[int, Union[int, str, Any]], _STORAGE_TENSOR_TYPE_TO_FIELD),
+    cast(dict[int, Union[int, str, Any]], _STORAGE_TENSOR_TYPE_TO_FIELD),
     "STORAGE_TENSOR_TYPE_TO_FIELD",
 )
 

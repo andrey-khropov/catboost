@@ -21,6 +21,7 @@ target_link_libraries(catboost-private-libs-text_features-ut PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-testing-unittest_main
   libs-helpers-flatbuffers
   private-libs-text_features
@@ -28,7 +29,7 @@ target_link_libraries(catboost-private-libs-text_features-ut PUBLIC
 )
 
 target_allocator(catboost-private-libs-text_features-ut
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(catboost-private-libs-text_features-ut PRIVATE

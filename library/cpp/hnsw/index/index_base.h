@@ -1,15 +1,41 @@
 #pragma once
 
 #include "index_reader.h"
+#include "filter_base.h"
+#include "neighbors_getter.h"
 
-#include <library/cpp/containers/dense_hash/dense_hash.h>
+#include <library/cpp/hnsw/helpers/distance.h>
 #include <library/cpp/hnsw/helpers/is_item_marked_deleted.h>
+#include <library/cpp/hnsw/helpers/search_context.h>
 
+#include <util/generic/maybe.h>
+#include <util/generic/ptr.h>
 #include <util/generic/vector.h>
 #include <util/generic/queue.h>
 #include <util/memory/blob.h>
 
 namespace NHnsw {
+    /**
+     * @brief Parameters for HNSW search configuration.
+     *
+     * @param TopSize                 The search will return at most this much nearest items.
+     * @param SearchNeighborhoodSize  Size of the dynamic candidate list (ef).
+     *                                Increasing this makes search slower but more accurate.
+     * @param DistanceCalcLimit       Limit on the number of distance computations.
+     * @param StopSearchSize          Minimum number of nearest neighbors found
+     *                                before termination conditions are evaluated.
+     * @param FilterMode              Filtering mode in HNSW, no filtration by default.
+     * @param FilterCheckLimit        Limit on the number of times the filter Check() method is called.
+     */
+    struct TSearchParameters {
+        size_t TopSize;
+        size_t SearchNeighborhoodSize;
+        size_t DistanceCalcLimit = Max<size_t>();
+        size_t StopSearchSize = 1;
+        EFilterMode FilterMode = EFilterMode::NO_FILTER;
+        size_t FilterCheckLimit = Max<size_t>();
+    };
+
     /**
      * This class uses ItemStorage created outside successor of this class.
      * If you don't need separate ItemStorage see index_item_storage_base.h.
@@ -34,57 +60,54 @@ namespace NHnsw {
             Reset<TIndexReader>(blob, indexReader);
         }
 
-
-
         /**
          * @brief Method for searching HNSW in index.
-         * See FindApproximateNeighbors from `../index_builder/build_routines.h` for algo details.
-         * The easiest way to use it, is to define a custom TDistance class,
-         * that has TResult and TLess defined.
-         * If you do so then searching is as simple as:
-         * @code
-         *   auto results = index.GetNearestNeighbors<TDistance>(item, topSize, searchNeighborhoodSize, maxCandidatesToCheck);
-         * @endcode
          *
-         * @param query                     Nearest neighbors for this item will be retrieved.
-         * @param topSize                   The search will return at most this much nearest items.
-         * @param searchNeighborhoodSize    Increasing this value makes the search slower but more accurate.
-         *                                  Typically, search time depends linearly on this param.
-         *                                  If the value is too low search could return less than topSize results.
-         * @param distanceCalcLimit         Limit of distance calculations.
-         * @param itemStorage               Storage with method GetItem(ui32 id) which provides item with given id.
+         * @param query             Query item for which nearest neighbors are retrieved.
+         * @param params            Structure containing search constraints and performance tuning.
+         * @param itemStorage       Storage providing GetItem(ui32 id) for the index.
+         * @param distance          Distance metric implementation
+         * @param distanceLess      Comparator for distance results
+         * @param filter            Optional class for item-level filtering.
+         * @param externalContext   Optional pointer to a reusable TSearchContext.
+         *                          Allows reusing internal buffers across queries to eliminate allocation overhead
          */
-
         template <class TItemStorage,
                   class TDistance,
                   class TDistanceResult = typename TDistance::TResult,
                   class TDistanceLess = typename TDistance::TLess,
-                  class TItem>
+                  class TItem,
+                  class TSearchContext = TDefaultSearchContext>
         TVector<TNeighbor<TDistanceResult>> GetNearestNeighbors(
             const TItem& query,
-            size_t topSize,
-            size_t searchNeighborhoodSize,
-            size_t distanceCalcLimit,
+            const TSearchParameters& params,
             const TItemStorage& itemStorage,
             const TDistance& distance = {},
-            const TDistanceLess& distanceLess = {}) const
+            const TDistanceLess& distanceLess = {},
+            const TFilterBase& filter = {},
+            TSearchContext* externalContext = nullptr) const
         {
-            if (Levels.empty() || searchNeighborhoodSize == 0) {
+            if (Levels.empty() || params.SearchNeighborhoodSize == 0 || params.StopSearchSize == 0) {
                 return {};
             }
+
+            TMaybe<TSearchContext> localContextStorage;
+            TSearchContext& context = externalContext ? *externalContext : localContextStorage.ConstructInPlace();
+
             ui32 entryId = 0;
-            auto entryDist = distance(query, itemStorage.GetItem(entryId));
-            bool distanceCalcLimitReached = --distanceCalcLimit == 0;
-            for (ui32 level = GetNumLevels(); level-- > 1 && !distanceCalcLimitReached;) {
-                for (bool entryChanged = true; entryChanged && !distanceCalcLimitReached;) {
+            NPrivate::TDistanceAdapter<TDistance, TDistanceResult, TItemStorage, TItem> distanceAdapter(
+                itemStorage, distance, params.DistanceCalcLimit);
+            auto entryDist = distanceAdapter.Calc(query, entryId);
+            for (ui32 level = GetNumLevels(); level-- > 1 && !distanceAdapter.IsLimitReached(); ) {
+                for (bool entryChanged = true; entryChanged && !distanceAdapter.IsLimitReached(); ) {
                     entryChanged = false;
-                    const ui32* neighbors = GetNeighbors(level, entryId);
-                    size_t numNeighbors = GetNumNeighbors(level);
-                    PrefetchNeighbors(itemStorage, neighbors, numNeighbors, distanceCalcLimit, nullptr);
-                    for (size_t i = 0; i < numNeighbors && !distanceCalcLimitReached; ++i) {
-                        ui32 id = neighbors[i];
-                        auto distToQuery = distance(query, itemStorage.GetItem(id));
-                        distanceCalcLimitReached = --distanceCalcLimit == 0;
+                    const TNeighborsView neighbors(GetNeighbors(level, entryId), GetNumNeighbors(level));
+                    distanceAdapter.Prefetch(neighbors);
+                    for (ui32 id: neighbors) {
+                        if (distanceAdapter.IsLimitReached()) {
+                            break;
+                        }
+                        const auto distToQuery = distanceAdapter.Calc(query, id);
                         if (distanceLess(distToQuery, entryDist)) {
                             entryDist = distToQuery;
                             entryId = id;
@@ -103,47 +126,57 @@ namespace NHnsw {
             };
 
             TPriorityQueue<TResultItem, TVector<TResultItem>, decltype(neighborLess)> nearest(neighborLess);
-            nearest.Container().reserve(searchNeighborhoodSize + 1);
+            nearest.Container().reserve(params.SearchNeighborhoodSize + 1);
             TPriorityQueue<TResultItem, TVector<TResultItem>, decltype(neighborGreater)> candidates(neighborGreater);
-            TDenseHashSet<ui32> visited(/*emptyKey*/ Max<ui32>());
 
-            if (!NPrivate::IsItemMarkedDeleted(itemStorage, entryId)) {
+            TFilterWithLimit filterWithLimit(filter, params.FilterCheckLimit);
+            auto neighborsGetter = CreateNeighborsGetter(params.FilterMode, filterWithLimit, context);
+
+            if (!NPrivate::IsItemMarkedDeleted(itemStorage, entryId) && (params.FilterMode == EFilterMode::NO_FILTER || filterWithLimit.Check(entryId))) {
                 nearest.push({entryDist, entryId});
             }
 
             candidates.push({entryDist, entryId});
-            visited.Insert(entryId);
+            context.TryMarkVisited(entryId);
 
-            while (!candidates.empty() && !distanceCalcLimitReached) {
+            while (!candidates.empty() && !distanceAdapter.IsLimitReached() && (params.FilterMode == EFilterMode::NO_FILTER || !filterWithLimit.IsLimitReached())) {
                 auto cur = candidates.top();
                 candidates.pop();
-                if (!nearest.empty() && distanceLess(nearest.top().Dist, cur.Dist)) {
+                if (nearest.size() >= params.StopSearchSize && distanceLess(nearest.top().Dist, cur.Dist)) {
                     break;
                 }
-                const ui32* neighbors = GetNeighbors(/*level*/ 0, cur.Id);
-                size_t numNeighbors = GetNumNeighbors(/*level*/ 0);
-                PrefetchNeighbors(itemStorage, neighbors, numNeighbors, distanceCalcLimit, &visited);
-                for (size_t i = 0; i < numNeighbors && !distanceCalcLimitReached; ++i) {
-                    ui32 id = neighbors[i];
-                    if (visited.Has(id)) {
-                        continue;
+                const auto neighbors = neighborsGetter->GetLayerNeighbors(cur.Id);
+                distanceAdapter.Prefetch(neighbors);
+                for (ui32 id: neighbors) {
+                    if (distanceAdapter.IsLimitReached()) {
+                        break;
                     }
-                    auto distToQuery = distance(query, itemStorage.GetItem(id));
-                    distanceCalcLimitReached = --distanceCalcLimit == 0;
-                    if (nearest.size() < searchNeighborhoodSize || distanceLess(distToQuery, nearest.top().Dist)) {
-                        if (!NPrivate::IsItemMarkedDeleted(itemStorage, id)) {
-                            nearest.push({distToQuery, id});
-                        }
+                    const auto distToQuery = distanceAdapter.Calc(query, id);
+                    if (nearest.size() < params.SearchNeighborhoodSize || distanceLess(distToQuery, nearest.top().Dist)) {
                         candidates.push({distToQuery, id});
-                        visited.Insert(id);
-                        if (nearest.size() > searchNeighborhoodSize) {
+
+                        if (NPrivate::IsItemMarkedDeleted(itemStorage, id)) {
+                            continue;
+                        }
+
+                        if (params.FilterMode == EFilterMode::FILTER_NEAREST) {
+                            if (filterWithLimit.IsLimitReached()) {
+                                break;
+                            }
+                            if (!filterWithLimit.Check(id)) {
+                                continue;
+                            }
+                        }
+
+                        nearest.push({distToQuery, id});
+                        if (nearest.size() > params.SearchNeighborhoodSize) {
                             nearest.pop();
                         }
                     }
                 }
             }
 
-            while (nearest.size() > topSize) {
+            while (nearest.size() > params.TopSize) {
                 nearest.pop();
             }
             TVector<TResultItem> result;
@@ -153,6 +186,59 @@ namespace NHnsw {
             }
             std::reverse(result.begin(), result.end());
             return result;
+        }
+
+        /**
+         * @brief Method for searching HNSW in index.
+         * See FindApproximateNeighbors from `../index_builder/build_routines.h` for algo details.
+         * The easiest way to use it, is to define a custom TDistance class,
+         * that has TResult and TLess defined.
+         * If you do so then searching is as simple as:
+         * @code
+         *   auto results = index.GetNearestNeighbors<TDistance>(item, topSize, searchNeighborhoodSize, maxCandidatesToCheck);
+         * @endcode
+         *
+         * @param query                     Nearest neighbors for this item will be retrieved.
+         * @param topSize                   The search will return at most this much nearest items.
+         * @param searchNeighborhoodSize    Increasing this value makes the search slower but more accurate.
+         *                                  Typically, search time depends linearly on this param.
+         *                                  If the value is too low search could return less than topSize results.
+         * @param distanceCalcLimit         Limit of distance calculations.
+         * @param itemStorage               Storage with method GetItem(ui32 id) which provides item with given id.
+         * @param stopSearchSize            Minimum number of nearest neighbors at which to stop search if
+         *                                  the best from candidates is worse than the worst of nearest neighbors
+         * @param filterMode                Filtering mode in HNSW, no filtration by default
+         * @param filter                    Class with Check(id) method that returns true if an item passes the filter
+         * @param filterCheckLimit          Limit of the number of items for which filters are checked
+         */
+        template <class TItemStorage,
+                  class TDistance,
+                  class TDistanceResult = typename TDistance::TResult,
+                  class TDistanceLess = typename TDistance::TLess,
+                  class TItem>
+        TVector<TNeighbor<TDistanceResult>> GetNearestNeighbors(
+            const TItem& query,
+            size_t topSize,
+            size_t searchNeighborhoodSize,
+            size_t distanceCalcLimit,
+            const TItemStorage& itemStorage,
+            const TDistance& distance = {},
+            const TDistanceLess& distanceLess = {},
+            const size_t stopSearchSize = 1,
+            const EFilterMode filterMode = EFilterMode::NO_FILTER,
+            const TFilterBase& filter = {},
+            const size_t filterCheckLimit = Max<size_t>()) const
+        {
+            const TSearchParameters params = {
+                .TopSize = topSize,
+                .SearchNeighborhoodSize = searchNeighborhoodSize,
+                .DistanceCalcLimit = distanceCalcLimit,
+                .StopSearchSize = stopSearchSize,
+                .FilterMode = filterMode,
+                .FilterCheckLimit = filterCheckLimit,
+            };
+            return GetNearestNeighbors<TItemStorage, TDistance, TDistanceResult, TDistanceLess, TItem>(
+                query, params, itemStorage, distance, distanceLess, filter);
         }
 
         /**
@@ -170,6 +256,11 @@ namespace NHnsw {
          *                                  Typically, search time depends linearly on this param.
          *                                  If the value is too low search could return less than topSize results.
          * @param itemStorage               Storage with method GetItem(ui32 id) which provides item with given id.
+         * @param stopSearchSize            Minimum number of nearest neighbors at which to stop search if
+         *                                  the best from candidates is worse than the worst of nearest neighbors
+         * @param filterMode                Filtering mode in HNSW, no filtration by default
+         * @param filter                    Class with Check(id) method that returns true if an item passes the filter
+         * @param filterCheckLimit          Limit of the number of items for which filters are checked
          */
         template <class TItemStorage,
                   class TDistance,
@@ -182,9 +273,13 @@ namespace NHnsw {
             size_t searchNeighborhoodSize,
             const TItemStorage& itemStorage,
             const TDistance& distance = {},
-            const TDistanceLess& distanceLess = {}) const
+            const TDistanceLess& distanceLess = {},
+            const size_t stopSearchSize = 1,
+            const EFilterMode filterMode = EFilterMode::NO_FILTER,
+            const TFilterBase& filter = {},
+            const size_t filterCheckLimit = Max<size_t>()) const
         {
-            return GetNearestNeighbors(query, topSize, searchNeighborhoodSize, Max<size_t>(), itemStorage, distance, distanceLess);
+            return GetNearestNeighbors(query, topSize, searchNeighborhoodSize, Max<size_t>(), itemStorage, distance, distanceLess, stopSearchSize, filterMode, filter, filterCheckLimit);
         }
 
     protected:
@@ -204,25 +299,16 @@ namespace NHnsw {
             return NumNeighborsInLevels[level];
         }
 
-        template<typename TItemStorage>
-        void PrefetchNeighbors(const TItemStorage&, const ui32*, size_t, size_t, const TDenseHashSet<ui32>*) const {
-            // Do nothing for TItemStorage without PrefetchItem
-        }
-
-        template<typename TItemStorage>
-        requires requires(TItemStorage itemStorage) {
-            itemStorage.PrefetchItem(0);
-        }
-        void PrefetchNeighbors(const TItemStorage& itemStorage, const ui32* neighbors, size_t numNeighbors, size_t distanceCalcLimit, const TDenseHashSet<ui32>* visited) const {
-            for (size_t i = 0; i < numNeighbors; ++i) {
-                ui32 id = neighbors[i];
-                if (visited != nullptr && visited->Has(id)) {
-                    continue;
-                }
-                itemStorage.PrefetchItem(id);
-                if (--distanceCalcLimit == 0) {
-                    break;
-                }
+        template <typename TSearchContext>
+        THolder<INeighborsGetter> CreateNeighborsGetter(
+            const EFilterMode filterMode, const TFilterWithLimit& filter, TSearchContext& context) const
+        {
+            switch (filterMode) {
+                case EFilterMode::ACORN:
+                    return MakeHolder<TAcornNeighborsGetter<TSearchContext>>(
+                        Levels[0], GetNumNeighbors(0), context, filter);
+                default:
+                    return MakeHolder<TNeighborsGetterBase<TSearchContext>>(Levels[0], GetNumNeighbors(0), context);
             }
         }
 
@@ -232,4 +318,4 @@ namespace NHnsw {
         TVector<const ui32*> Levels;
     };
 
-}
+} // namespace NHnsw

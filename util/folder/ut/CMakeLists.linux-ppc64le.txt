@@ -19,6 +19,7 @@ target_link_libraries(util-folder-ut PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-testing-unittest_main
   cpp-threading-future
 )
@@ -44,6 +45,7 @@ target_sources(util-folder-ut PRIVATE
   ${PROJECT_SOURCE_DIR}/util/folder/iterator_ut.cpp
   ${PROJECT_SOURCE_DIR}/util/folder/path_ut.cpp
   ${PROJECT_SOURCE_DIR}/util/folder/pathsplit_ut.cpp
+  ${PROJECT_SOURCE_DIR}/util/folder/tempdir_ut.cpp
 )
 
 

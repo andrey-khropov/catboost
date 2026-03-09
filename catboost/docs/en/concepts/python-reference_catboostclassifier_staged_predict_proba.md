@@ -36,6 +36,7 @@ For multiple objects:
 - {{ python-type--pandasDataFrame }}
 - {{ python_type__pandas-SparseDataFrame }}
 - {{ python-type--pandasSeries }}
+- [polars.DataFrame](https://docs.pola.rs/api/python/stable/reference/dataframe/index.html)
 - [{{ python-type__FeaturesData }}](../concepts/python-features-data__desc.md)
 - {% include [libsvm-scipy-except-dia](../_includes/work_src/reusage-formats/scipy-except-dia.md) %}
 
@@ -106,7 +107,9 @@ In this case, the metrics are calculated for the following tree ranges: `[0, 2)`
 #### Description
 
 The number of threads to use.
-{% include [reusage-thread_count__cpu_cores__optimizes-the-speed-of-execution](../_includes/work_src/reusage/thread_count__cpu_cores__optimizes-the-speed-of-execution.md) %}
+
+Optimizes the speed of execution. This parameter doesn't affect results.
+
 
 **Possible types**
 

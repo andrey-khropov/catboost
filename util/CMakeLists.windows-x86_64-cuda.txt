@@ -299,6 +299,22 @@ target_sources(yutil PRIVATE
 )
 
 
+set_property(
+  SOURCE
+  ${PROJECT_SOURCE_DIR}/util/folder/lstat_win.c
+  APPEND
+  PROPERTY
+  COMPILE_OPTIONS
+)
+
+set_property(
+  SOURCE
+  ${PROJECT_SOURCE_DIR}/util/folder/dirent_win.c
+  APPEND
+  PROPERTY
+  COMPILE_OPTIONS
+)
+
 target_joined_source(yutil
   all_datetime.cpp
   ${PROJECT_SOURCE_DIR}/util/datetime/base.cpp
@@ -503,7 +519,6 @@ target_joined_source(yutil
   ${PROJECT_SOURCE_DIR}/util/system/condvar.cpp
   ${PROJECT_SOURCE_DIR}/util/system/daemon.cpp
   ${PROJECT_SOURCE_DIR}/util/system/datetime.cpp
-  ${PROJECT_SOURCE_DIR}/util/system/defaults.c
   ${PROJECT_SOURCE_DIR}/util/system/direct_io.cpp
   ${PROJECT_SOURCE_DIR}/util/system/dynlib.cpp
   ${PROJECT_SOURCE_DIR}/util/system/env.cpp

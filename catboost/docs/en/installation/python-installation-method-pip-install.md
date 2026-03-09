@@ -2,7 +2,7 @@
 
 {% include [supported-versions](../_includes/work_src/reusage-installation/python__supported-versions.md) %}
 
-To install {{ product }} from pip:
+To install {{ product }} from PyPI with pip:
 
 1. Run the following command:
 
@@ -46,3 +46,7 @@ To install {{ product }} from pip:
     Refer to the following sections for details:
     - [Data visualization](../features/visualization.md)
     - [Additional packages for data visualization support](../installation/python-installation-additional-data-visualization-packages.md)
+
+1. User-defined functions:
+
+    {% include [python__user-defined-function-dependencies](../_includes/work_src/reusage-installation/python__user-defined-functions-dependencies.md) %}

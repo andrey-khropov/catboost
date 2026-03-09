@@ -1,5 +1,4 @@
 import setuptools
-import distutils
 import itertools
 import os
 import re
@@ -27,6 +26,36 @@ from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 SETUP_DIR = os.path.abspath(os.path.dirname(__file__))
 PKG_INFO = 'PKG-INFO'
 EXT_SRC = 'catboost_all_src'
+
+
+def copy_file(src: str, dst: str, verbose: bool = False, dry_run: bool = False, update: bool = False):
+    if verbose:
+        log.info(f'Copying file "{src}" to "{dst}" {"in update mode" if update else ""}')
+    if not dry_run:
+        if update and os.path.exists(dst):
+            if os.path.getmtime(dst) >= os.path.getmtime(src):
+                if verbose:
+                    log.info(f'File "{dst}" is up to date')
+                return
+        shutil.copy2(src, dst)
+
+
+def copy_tree(src: str, dst: str, verbose: bool = False, dry_run: bool = False):
+    if verbose:
+        log.info(f'Copying directory "{src}" to "{dst}"')
+
+    if not dry_run:
+        # do not call shutil.copytree even with copy_file_closure because it checks the existence of 'src'
+        def copy_file_closure(src: str, dst: str):
+            copy_file(src, dst, verbose)
+        shutil.copytree(src, dst, copy_function=copy_file_closure, dirs_exist_ok=True)
+
+
+def mkpath(path: str, verbose: bool = False, dry_run: bool = False):
+    if verbose:
+        log.info(f'Recusively creating a directory "{path}"')
+    if not dry_run:
+        os.makedirs(path, exist_ok=True)
 
 
 def get_topsrc_dir():
@@ -95,17 +124,7 @@ def setup_hnsw_submodule(argv, extensions):
 
 
 def get_setup_requires(argv):
-    setup_requires = ['wheel']
-
-    # numpy definitions for cython have been moved from cython itself to numpy so now numpy is required for setup as well
-    # https://github.com/cython/cython/issues/6249#issuecomment-2176633822
-    if sys.version_info < (3, 9):
-        setup_requires += ['cython', 'numpy']
-    else:
-        # Numpy 2.x is compatible only with Python 3.9+ and packages built with numpy 2.x will work with numpy 1.x as well
-        # technically you could still try to use older cython and numpy versions but the built packages will be
-        # compatible with numpy 1.x only, so it is easier to just prohibit it to avoid unnecessary complications
-        setup_requires += ['cython >= 3', 'numpy >= 2']
+    setup_requires = ['cmake (>=3.24, <4.0)', 'conan (>=2.4.1, <3.0)', 'cython ~= 3.0.10', 'numpy < 3.0']
 
     if ('build_widget' in argv) or (not ('--no-widget' in argv)):
         setup_requires += ['jupyterlab (>=3.0.6, <3.6.0)']
@@ -159,6 +178,7 @@ def copy_catboost_sources(topdir, pkgdir, verbose, dry_run):
         os.path.join('catboost', 'private'),
         os.path.join('catboost', 'tools'),
         'cmake',
+        os.path.join('contrib', 'deprecated', 'nvidia'),
         os.path.join('contrib', 'libs'),
         os.path.join('contrib', 'restricted'),
         os.path.join('contrib', 'tools', 'protoc'),
@@ -189,10 +209,10 @@ def copy_catboost_sources(topdir, pkgdir, verbose, dry_run):
         src = os.path.join(topdir, name)
         dst = os.path.join(pkgdir, name)
         if os.path.isdir(src):
-            distutils.dir_util.copy_tree(src, dst, verbose=verbose, dry_run=dry_run)
+            copy_tree(src, dst, verbose=verbose, dry_run=dry_run)
         else:
-            distutils.dir_util.mkpath(os.path.dirname(dst))
-            distutils.file_util.copy_file(src, dst, update=1, verbose=verbose, dry_run=dry_run)
+            mkpath(os.path.dirname(dst), verbose=verbose, dry_run=dry_run)
+            copy_file(src, dst, update=1, verbose=verbose, dry_run=dry_run)
 
 
 def emph(s):
@@ -430,14 +450,14 @@ class build_ext(_build_ext):
 
     def run(self):
         verbose = self.distribution.verbose
-        dry_run = self.distribution.dry_run
+        dry_run = getattr(self.distribution, 'dry_run', False)
 
         for ext in self.extensions:
             if not isinstance(ext, ExtensionWithSrcAndDstSubPath):
                 raise RuntimeError('Only ExtensionWithSrcAndDstSubPath extensions are supported')
 
             put_dir = os.path.abspath(os.path.join(SETUP_DIR if self.inplace else self.build_lib, ext.dst_sub_path))
-            distutils.dir_util.mkpath(put_dir, verbose=verbose, dry_run=dry_run)
+            mkpath(put_dir, verbose=verbose, dry_run=dry_run)
 
         if self.prebuilt_extensions_build_root_dir is not None:
             build_dir = self.prebuilt_extensions_build_root_dir
@@ -455,7 +475,10 @@ class build_ext(_build_ext):
         sys.path = [os.path.join(topsrc_dir, 'build')] + sys.path
         import build_native
 
-        python3_root_dir = os.path.abspath(os.path.join(os.path.dirname(sys.executable), os.pardir))
+        if sys.platform == 'win32':
+            python3_root_dir = os.path.abspath(os.path.dirname(sys.executable))
+        else:
+            python3_root_dir = os.path.abspath(os.path.join(os.path.dirname(sys.executable), os.pardir))
         if self.with_cuda:
             cuda_support_msg = 'with CUDA support'
         else:
@@ -490,11 +513,7 @@ class build_ext(_build_ext):
                 ext.dst_sub_path,
                 ext.name + build_ext.get_extension_suffix()
             )
-            if dry_run:
-                # distutils.file_util.copy_file checks that src file exists so we can't just call it here
-                distutils.file_util.log.info(f'copying {src} -> {dst}')
-            else:
-                distutils.file_util.copy_file(src, dst, verbose=verbose, dry_run=dry_run)
+            copy_file(src, dst, verbose=verbose, dry_run=dry_run)
 
 
 # does not add '.exe' to the command on Windows unlike standard 'spawn' from distutils
@@ -534,12 +553,7 @@ class build_widget(setuptools.Command, setuptools.command.build.SubCommand):
     def _build(self, verbose, dry_run):
         src_js_dir = os.path.join('catboost', 'widget', 'js')
 
-        distutils.dir_util.copy_tree(
-            src_js_dir,
-            self.build_generated,
-            verbose=verbose,
-            dry_run=dry_run
-        )
+        copy_tree(src_js_dir, self.build_generated, verbose=verbose, dry_run=dry_run)
 
         if not dry_run:
             os.chdir(self.build_generated)
@@ -590,7 +604,7 @@ class build_widget(setuptools.Command, setuptools.command.build.SubCommand):
 
     def run(self):
         verbose = self.distribution.verbose
-        dry_run = self.distribution.dry_run
+        dry_run = getattr(self.distribution, 'dry_run', False)
 
         if not self.prebuilt_widget:
             self._build(verbose, dry_run)
@@ -634,7 +648,7 @@ class develop(_develop):
 
         # create an .egg-link in the installation dir, pointing to our egg
         log.info("Creating %s (link to %s)", self.egg_link, self.egg_base)
-        if not self.dry_run:
+        if not getattr(self, 'dry_run', False):
             with open(self.egg_link, "w") as f:
                 f.write(self.egg_path + "\n" + self.setup_path)
         # postprocess the installed distro, fixing up .pth, installing scripts,
@@ -658,7 +672,7 @@ class install_data(_install_data):
             if self.data_files is None:
                 self.data_files = []
             self.data_files += self.get_finalized_command("build_widget").get_data_files(
-                dry_run=self.distribution.dry_run
+                dry_run=getattr(self.distribution, 'dry_run', False)
             )
 
 
@@ -711,7 +725,7 @@ class sdist(_sdist):
             os.path.join(SETUP_DIR, '..', '..'),
             os.path.join(base_dir, EXT_SRC),
             verbose=self.distribution.verbose,
-            dry_run=self.distribution.dry_run,
+            dry_run=getattr(self.distribution, 'dry_run', False),
         )
 
 
@@ -774,7 +788,7 @@ if __name__ == '__main__':
             'graphviz',
             'matplotlib',
             'numpy (>=1.16.0, <3.0)',
-            'pandas (>=0.24)',
+            'pandas (>=0.24, <4.0)',
             'scipy',
             'plotly',
             'six',

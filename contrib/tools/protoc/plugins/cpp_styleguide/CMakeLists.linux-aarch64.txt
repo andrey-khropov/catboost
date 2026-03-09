@@ -23,11 +23,12 @@ target_link_libraries(cpp_styleguide PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   contrib-libs-protoc
 )
 
 target_allocator(cpp_styleguide
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(cpp_styleguide PRIVATE

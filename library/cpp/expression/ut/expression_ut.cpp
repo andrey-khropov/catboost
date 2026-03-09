@@ -30,6 +30,7 @@ Y_UNIT_TEST_SUITE(TCalcExpressionTest) {
         UNIT_ASSERT_EQUAL(CalcExpression("(2 - 1) > 0", m), 1);
         UNIT_ASSERT_EQUAL(CalcExpression("(2 - 1) > 1", m), 0);
         UNIT_ASSERT_EQUAL(CalcExpression("2 - 2 - 2", m), -2);
+        UNIT_ASSERT_EQUAL(CalcExpression("!2", m), 0);
         UNIT_ASSERT_VALUES_EQUAL(CalcExpression("0*neg", m), 0);
         UNIT_ASSERT_VALUES_EQUAL(CalcExpression("1 * -1000", m), -1000);
         UNIT_ASSERT_VALUES_EQUAL(CalcExpression("1 * +1000", m), 1000);
@@ -37,7 +38,9 @@ Y_UNIT_TEST_SUITE(TCalcExpressionTest) {
         UNIT_ASSERT_VALUES_EQUAL(CalcExpression("small * -1000", m), -1000);
         UNIT_ASSERT_VALUES_EQUAL(CalcExpression("small * -small", m), -1);
         UNIT_ASSERT_VALUES_EQUAL(CalcExpression("(small + small) * -small", m), -2);
+        UNIT_ASSERT_EQUAL(CalcExpression("!small", m), 0);
         UNIT_ASSERT_VALUES_EQUAL(CalcExpression("0*-1000", m), 0);
+        UNIT_ASSERT_VALUES_EQUAL(CalcExpression("1||0&&0", m), 0);
 
         UNIT_ASSERT_EQUAL(CalcExpression("-2 + 2", m), 0);
         UNIT_ASSERT_EQUAL(CalcExpression("mv&32768==32768", m), 1);
@@ -400,6 +403,31 @@ Y_UNIT_TEST_SUITE(TCalcExpressionTest) {
         UNIT_ASSERT_EQUAL(calcExpression("A =~ \".*r\""), 1);
         UNIT_ASSERT_EQUAL(calcExpression("A =~ A"), 1);
         UNIT_ASSERT_EQUAL(calcExpression("cyr =~ \"к.р[и]л*ица\""), 1);
+    }
+
+    Y_UNIT_TEST(TestNumberValueAsString) {
+        THashMap<TString, TString> m;
+        m["feature"] = "10";
+        m["analysts.have_puids_freeze_2026-01-01_2026-02-08"] = "1";
+        m["analysts.have_puids_freeze_2026_01_01_2026_02_08"] = "1";
+        UNIT_ASSERT_EQUAL(CalcExpression("feature + 1", m), 11);
+        UNIT_ASSERT_EQUAL(CalcExpression("feature > 5", m), 1);
+        UNIT_ASSERT_EQUAL(CalcExpression("feature > 20", m), 0);
+        UNIT_ASSERT_EQUAL(CalcExpression("feature != 10", m), 0);
+        UNIT_ASSERT_EQUAL(CalcExpression("feature != \"10\"", m), 0);
+        UNIT_ASSERT_EQUAL(CalcExpression("feature == 10", m), 1);
+        UNIT_ASSERT_EQUAL(CalcExpression("analysts.have_puids_freeze_2026-01-01_2026-02-08 == 1", m), 0);
+        UNIT_ASSERT_EQUAL(CalcExpression("analysts.have_puids_freeze_2026_01_01_2026_02_08 == 1", m), 1);
+    }
+
+    Y_UNIT_TEST(TestEmptyExpression) {
+        // На самом деле должно бросать исключение тут https://a.yandex-team.ru/arcadia/library/cpp/expression/expression.cpp?rev=r15660625#L547
+        // Но т.к. в Trim очень давно баг в удалении пробелов с начала, индекс перебегает индекс конца, то исключения не происходит
+        // Этому багу 12 лет, исправление бага приводит к падению других тестов, поэтому этот баг не исправил
+        // В этом тесте проверяю что исключения нет и вычисление пустого выражения дает 0
+        THashMap<TString, TString> m;
+        m["A"] = "123";
+        UNIT_ASSERT_EQUAL(CalcExpression("", m), 0);
     }
 
 } // TCalcExpressionTest

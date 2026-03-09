@@ -5,14 +5,12 @@
 // Experimental language syntax and parser for ONNX. Please note that the syntax as formalized
 // by this parser is preliminary and may change.
 
-#include <stdexcept>
-#include <string>
-#include <unordered_map>
-
-#include "onnx/onnx_pb.h"
-#include "onnx/string_utils.h"
-
 #include "onnx/defs/parser.h"
+
+#include <cctype>
+#include <string>
+
+#include "onnx/common/common.h"
 
 #define PARSE_TOKEN(x) CHECK_PARSER_STATUS(ParserBase::Parse(x))
 #define PARSE(...) CHECK_PARSER_STATUS(Parse(__VA_ARGS__))
@@ -52,7 +50,38 @@ Status ParserBase::Parse(Literal& result) {
       }
     } else
       result.value = std::string(from + 1, next_ - from - 2); // skip enclosing quotes
-  } else if ((isdigit(nextch) || (nextch == '-'))) {
+    return Status::OK();
+  }
+
+  // Simplify the next ifs by consuming a possible negative sign.
+  if (nextch == '-') {
+    ++next_;
+    nextch = NextChar();
+  }
+
+  // Check for float literals that start with alphabet characters.
+  if (isalpha(nextch)) {
+    // Has to be a special float literal now: (-)*(nan|inf|infinity).
+    if (NextIsValidFloatString()) {
+      while (next_ < end_ && isalpha(*next_)) {
+        ++next_;
+      }
+      ONNX_TRY {
+        static_cast<void>(std::stof(std::string(from, next_ - from)));
+        result.type = LiteralType::FLOAT_LITERAL;
+        result.value = std::string(from, next_ - from);
+      }
+      ONNX_CATCH(...) {
+        ONNX_HANDLE_EXCEPTION([&]() { return ParseError("Encountered invalid float literal!"); });
+      }
+    } else {
+      return ParseError("Encountered invalid float literal!");
+    }
+    return Status::OK();
+  }
+
+  // Checking for numeric ints or float literal.
+  if (isdigit(nextch)) {
     ++next_;
 
     while ((next_ < end_) && (isdigit(*next_) || (*next_ == '.'))) {
@@ -83,15 +112,60 @@ Status ParserBase::Parse(Literal& result) {
   return Status::OK();
 }
 
+bool ParserBase::NextIsValidFloatString() {
+  auto nextch = NextChar();
+  auto from = next_;
+  constexpr int INFINITY_LENGTH = 8;
+
+  if (isalpha(nextch)) {
+    while (next_ < end_ && isalpha(*next_) && (next_ - from) <= INFINITY_LENGTH) {
+      ++next_;
+    }
+
+    if (isdigit(*next_)) { // No trailing digits
+      next_ = from;
+      return false;
+    }
+
+    std::string candidate = std::string(from, next_ - from);
+
+    // Reset parser location before continuing.
+    next_ = from;
+
+    std::transform(
+        candidate.begin(), candidate.end(), candidate.begin(), [](unsigned char c) { return std::tolower(c); });
+    if (candidate == std::string("inf") || candidate == std::string("infinity") || candidate == std::string("nan")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Parsing an IdList (list of identifiers separated by commas, where identifiers are allowed to be empty).
+// Used to represent the list of inputs or outputs of a node.
+// An empty identifier may be represented by an empty string "" or by nothing followed by a single comma.
+// "Op()" has no operands
+// "Op(,x)" has two operands, the first being empty.
+// 'Op("")' has one operand, which is an empty string.
+// 'Op(,)' has one operand, which is an empty string.
+// Thus, this will also allow a trailing comma after a non-empty identifier with no effect.
+// 'Op(x,)' has one operand, which is 'x'.
+//
+// This is mostly for some backward compatibility. "" is a simpler way to represent an
+// empty identifier that is less confusing and is recommended.
+
 Status OnnxParser::Parse(IdList& idlist) {
   idlist.Clear();
   std::string id;
-  ParseOptionalIdentifier(id);
-  if (id.empty())
-    return Status::OK(); // Treat as empty list of identifiers
+  bool found = false;
+  CHECK_PARSER_STATUS(ParseOptionalQuotableIdentifier(id, found));
+  if (!found)
+    return Status::OK();
   *idlist.Add() = id;
   while (Matches(',')) {
-    ParseOptionalIdentifier(id);
+    CHECK_PARSER_STATUS(ParseOptionalQuotableIdentifier(id, found));
+    if (!found)
+      break;
     *idlist.Add() = id;
   }
   return Status::OK();
@@ -111,7 +185,7 @@ Status OnnxParser::Parse(IdList& idlist, AttrList& attrlist) {
   attrlist.Clear();
   do {
     std::string id;
-    ParseIdentifier(id);
+    CHECK_PARSER_STATUS(ParseQuotableIdentifier(id));
     auto next = NextChar();
     if (next == ':' || next == '=')
       Parse(*attrlist.Add(), id);
@@ -139,8 +213,7 @@ Status OnnxParser::Parse(TensorShapeProto& shape) {
       shape.add_dim();
     } else {
       // Check for a symbolic identifier ...
-      std::string id;
-      CHECK_PARSER_STATUS(ParseOptionalIdentifier(id));
+      auto id = ParseOptionalIdentifier();
       if (!id.empty()) {
         shape.add_dim()->set_dim_param(id);
       } else {
@@ -247,17 +320,50 @@ Status OnnxParser::Parse(ValueInfoProto& valueinfo) {
   if (NextIsType())
     PARSE(*valueinfo.mutable_type());
   std::string name;
-  CHECK_PARSER_STATUS(ParseIdentifier(name));
+  CHECK_PARSER_STATUS(ParseQuotableIdentifier(name));
   valueinfo.set_name(name);
   return Status::OK();
 }
 
-Status OnnxParser::Parse(ValueInfoList& vilist) {
+Status OnnxParser::Parse(char open, ValueInfoList& vilist, char close) {
+  MATCH(open);
+  if (!Matches(close)) {
+    do {
+      PARSE(*vilist.Add());
+    } while (Matches(','));
+    MATCH(close);
+  }
+  return Status::OK();
+}
+
+Status OnnxParser::ParseGraphInputOutput(ValueInfoList& vilist) {
   vilist.Clear();
+  PARSE('(', vilist, ')');
+  return Status::OK();
+}
+
+Status OnnxParser::ParseFunctionInputOutput(IdList& idlist, ValueInfoList& vilist) {
+  // Do not clear vilist, as it accumulates values over inputs and outputs.
+  idlist.Clear();
   MATCH('(');
   if (!Matches(')')) {
     do {
-      PARSE(*vilist.Add());
+      // Function inputs/outputs can be optionally typed.
+      // Syntax: Name | Type Name
+      // The name is added to idlist. If the optional type is present, an entry is
+      // added to vilist.
+
+      std::string name;
+      ValueInfoProto* vi = nullptr;
+
+      if (NextIsType()) {
+        vi = vilist.Add();
+        PARSE(*(vi->mutable_type()));
+      }
+      CHECK_PARSER_STATUS(ParseQuotableIdentifier(name));
+      *idlist.Add() = name;
+      if (vi != nullptr)
+        vi->set_name(name);
     } while (Matches(','));
     MATCH(')');
   }
@@ -313,12 +419,25 @@ Status OnnxParser::ParseValueInfo(ValueInfoList& value_infos, TensorList& initia
   return Status::OK();
 }
 
+Status OnnxParser::Parse(StringStringList& stringStringList) {
+  std::string strval;
+  do {
+    auto* metadata = stringStringList.Add();
+    PARSE_TOKEN(strval);
+    metadata->set_key(strval);
+    MATCH(':');
+    PARSE_TOKEN(strval);
+    metadata->set_value(strval);
+  } while (Matches(','));
+  return Status::OK();
+}
+
 Status OnnxParser::Parse(TensorProto& tensorProto) {
   tensorProto = TensorProto();
   // Parse the concrete tensor-type with numeric dimensions:
   TypeProto typeProto;
   PARSE(typeProto);
-  ParseOptionalIdentifier(*tensorProto.mutable_name());
+  *tensorProto.mutable_name() = ParseOptionalIdentifier();
   (void)Matches('='); // Optional, to unify handling of initializers as well as tensor-protos in other contexts
   return Parse(tensorProto, typeProto);
 }
@@ -331,76 +450,89 @@ Status OnnxParser::Parse(TensorProto& tensorProto, const TypeProto& tensorTypePr
   tensorProto.set_data_type(elem_type);
   if (!tensorTypeProto.tensor_type().has_shape())
     return ParseError("Error parsing TensorProto (expected a tensor shape).");
-  uint64_t n = 1;
   for (auto& dim : tensorTypeProto.tensor_type().shape().dim()) {
     if (!dim.has_dim_value())
       return ParseError("Error parsing TensorProto shape (expected numeric dimension).");
     auto dimval = dim.dim_value();
     tensorProto.add_dims(dimval);
-    n *= dimval;
   }
 
   // tensorProto.mutable_int64_data()->Reserve(n);
   // Parse the actual values:
 
-  int64_t intval;
-  uint64_t uintval;
-  float floatval;
-  double dblval;
+  int64_t intval = 0;
+  uint64_t uintval = 0;
+  float floatval = 0.0;
+  double dblval = 0.0;
   std::string strval;
-  MATCH('{');
-  if (!Matches('}')) {
-    do {
-      switch (static_cast<TensorProto::DataType>(elem_type)) {
-        case TensorProto::DataType::TensorProto_DataType_INT8:
-        case TensorProto::DataType::TensorProto_DataType_INT16:
-        case TensorProto::DataType::TensorProto_DataType_INT32:
-        case TensorProto::DataType::TensorProto_DataType_UINT8:
-        case TensorProto::DataType::TensorProto_DataType_UINT16:
-        case TensorProto::DataType::TensorProto_DataType_BOOL:
-          PARSE_TOKEN(intval);
-          // TODO: check values are in the correct range.
-          tensorProto.add_int32_data(intval);
-          break;
-        case TensorProto::DataType::TensorProto_DataType_INT64:
-          PARSE_TOKEN(intval);
-          tensorProto.add_int64_data(intval);
-          break;
-        case TensorProto::DataType::TensorProto_DataType_UINT32:
-        case TensorProto::DataType::TensorProto_DataType_UINT64:
-          PARSE_TOKEN(uintval);
-          tensorProto.add_uint64_data(uintval);
-          break;
-        case TensorProto::DataType::TensorProto_DataType_FLOAT:
-          PARSE_TOKEN(floatval);
-          tensorProto.add_float_data(floatval);
-          break;
-        case TensorProto::DataType::TensorProto_DataType_DOUBLE:
-          PARSE_TOKEN(dblval);
-          tensorProto.add_double_data(dblval);
-          break;
-        case TensorProto::DataType::TensorProto_DataType_STRING:
-          PARSE_TOKEN(strval);
-          tensorProto.add_string_data(strval);
-          break;
-        default:
-          return ParseError("Unhandled type: %d", elem_type);
-      }
-    } while (Matches(','));
-    MATCH('}');
+  if (Matches('{')) {
+    if (!Matches('}')) {
+      do {
+        switch (static_cast<TensorProto::DataType>(elem_type)) {
+          case TensorProto::DataType::TensorProto_DataType_INT4:
+          case TensorProto::DataType::TensorProto_DataType_INT8:
+          case TensorProto::DataType::TensorProto_DataType_INT16:
+          case TensorProto::DataType::TensorProto_DataType_INT32:
+          case TensorProto::DataType::TensorProto_DataType_UINT4:
+          case TensorProto::DataType::TensorProto_DataType_UINT8:
+          case TensorProto::DataType::TensorProto_DataType_UINT16:
+          case TensorProto::DataType::TensorProto_DataType_FLOAT16:
+          case TensorProto::DataType::TensorProto_DataType_BFLOAT16:
+          case TensorProto::DataType::TensorProto_DataType_FLOAT8E4M3FN:
+          case TensorProto::DataType::TensorProto_DataType_FLOAT8E4M3FNUZ:
+          case TensorProto::DataType::TensorProto_DataType_FLOAT8E5M2:
+          case TensorProto::DataType::TensorProto_DataType_FLOAT8E5M2FNUZ:
+          case TensorProto::DataType::TensorProto_DataType_BOOL:
+          case TensorProto::DataType::TensorProto_DataType_FLOAT4E2M1:
+            PARSE_TOKEN(intval);
+            // TODO: check values are in the correct range.
+            tensorProto.add_int32_data(intval);
+            break;
+          case TensorProto::DataType::TensorProto_DataType_INT64:
+            PARSE_TOKEN(intval);
+            tensorProto.add_int64_data(intval);
+            break;
+          case TensorProto::DataType::TensorProto_DataType_UINT32:
+          case TensorProto::DataType::TensorProto_DataType_UINT64:
+            PARSE_TOKEN(uintval);
+            tensorProto.add_uint64_data(uintval);
+            break;
+          case TensorProto::DataType::TensorProto_DataType_COMPLEX64:
+          case TensorProto::DataType::TensorProto_DataType_FLOAT:
+            PARSE_TOKEN(floatval);
+            tensorProto.add_float_data(floatval);
+            break;
+          case TensorProto::DataType::TensorProto_DataType_COMPLEX128:
+          case TensorProto::DataType::TensorProto_DataType_DOUBLE:
+            PARSE_TOKEN(dblval);
+            tensorProto.add_double_data(dblval);
+            break;
+          case TensorProto::DataType::TensorProto_DataType_STRING:
+            PARSE_TOKEN(strval);
+            tensorProto.add_string_data(strval);
+            break;
+          default:
+            return ParseError("Unhandled type: %d", elem_type);
+        }
+      } while (Matches(','));
+      MATCH('}');
+    }
+  } else if (Matches('[')) {
+    tensorProto.set_data_location(TensorProto::DataLocation::TensorProto_DataLocation_EXTERNAL);
+    auto& externalData = *tensorProto.mutable_external_data();
+    PARSE(externalData);
+    MATCH(']');
   }
   return Status::OK();
 }
 
 bool OnnxParser::NextIsIdentifier() {
-  std::string id("");
-  (void)PeekIdentifier(id);
+  auto id = PeekIdentifier();
   return !(id.empty());
 }
 
 bool OnnxParser::NextIsType() {
-  std::string id("");
-  (void)PeekIdentifier(id);
+  auto id = PeekIdentifier();
   if (PrimitiveTypeNameMap::IsTypeName(id))
     return true;
   switch (KeyWordMap::Lookup(id)) {
@@ -414,36 +546,47 @@ bool OnnxParser::NextIsType() {
   }
 }
 
-Status OnnxParser::ParseSingleAttributeValue(AttributeProto& attr) {
+Status OnnxParser::ParseSingleAttributeValue(AttributeProto& attr, AttributeProto_AttributeType expected) {
   // Parse a single-value
   auto next = NextChar();
   if (isalpha(next) || next == '_') {
     if (NextIsType()) {
       TypeProto typeProto;
-      Parse(typeProto);
+      CHECK_PARSER_STATUS(Parse(typeProto));
       next = NextChar();
       if ((next == '{') || (next == '=') || (NextIsIdentifier())) {
         attr.set_type(AttributeProto_AttributeType_TENSOR);
         auto& tensorProto = *attr.mutable_t();
-        ParseOptionalIdentifier(*tensorProto.mutable_name());
+        std::string name;
+        CHECK_PARSER_STATUS(ParseOptionalQuotableIdentifier(name));
+        *tensorProto.mutable_name() = name;
         (void)Matches('='); // Optional, to unify handling of initializers
-        Parse(tensorProto, typeProto);
+        CHECK_PARSER_STATUS(Parse(tensorProto, typeProto));
       } else {
         attr.set_type(AttributeProto_AttributeType_TYPE_PROTO);
         attr.mutable_tp()->CopyFrom(typeProto);
       }
     } else {
-      attr.set_type(AttributeProto_AttributeType_GRAPH);
-      Parse(*attr.mutable_g());
+      if (NextIsValidFloatString()) {
+        Literal literal;
+        PARSE_TOKEN(literal);
+        attr.set_type(AttributeProto_AttributeType_FLOAT);
+        attr.set_f(static_cast<float>(std::stof(literal.value)));
+      } else {
+        attr.set_type(AttributeProto_AttributeType_GRAPH);
+        PARSE(*attr.mutable_g());
+      }
     }
   } else if (Matches('@')) {
     std::string name;
-    CHECK_PARSER_STATUS(ParseIdentifier(name));
+    CHECK_PARSER_STATUS(ParseQuotableIdentifier(name));
     attr.set_ref_attr_name(name);
   } else {
     Literal literal;
     PARSE_TOKEN(literal);
     switch (literal.type) {
+      case LiteralType::UNDEFINED:
+        return ParseError("Internal error");
       case LiteralType::INT_LITERAL:
         attr.set_type(AttributeProto_AttributeType_INT);
         attr.set_i(std::stol(literal.value));
@@ -456,8 +599,20 @@ Status OnnxParser::ParseSingleAttributeValue(AttributeProto& attr) {
         attr.set_type(AttributeProto_AttributeType_STRING);
         attr.set_s(literal.value);
         break;
-      default:
-        return ParseError("Unexpected literal type.");
+    }
+  }
+  if ((expected != AttributeProto_AttributeType_UNDEFINED) && (expected != attr.type())) {
+    // Mismatch between type-annotation and attribute-value. We do an implicit cast
+    // only in the special case of FLOAT type and integral value like 2
+    if ((expected == AttributeProto_AttributeType_FLOAT) && (attr.type() == AttributeProto_AttributeType_INT)) {
+      attr.set_type(AttributeProto_AttributeType_FLOAT);
+      attr.set_f(static_cast<float>(attr.i()));
+    } else {
+      return ParseError(
+          "Mismatch between expected type ",
+          AttributeProto_AttributeType_Name(expected),
+          " and specified value's type",
+          AttributeProto_AttributeType_Name(attr.type()));
     }
   }
   return Status::OK();
@@ -468,6 +623,42 @@ Status OnnxParser::Parse(AttributeProto& attr) {
   std::string name;
   CHECK_PARSER_STATUS(ParseIdentifier(name));
   return Parse(attr, name);
+}
+
+static bool IsSingletonAttribute(AttributeProto_AttributeType type) {
+  switch (type) {
+    case AttributeProto_AttributeType_FLOAT:
+    case AttributeProto_AttributeType_INT:
+    case AttributeProto_AttributeType_STRING:
+    case AttributeProto_AttributeType_TENSOR:
+    case AttributeProto_AttributeType_GRAPH:
+    case AttributeProto_AttributeType_SPARSE_TENSOR:
+    case AttributeProto_AttributeType_TYPE_PROTO:
+      return true;
+    default:
+      return false;
+  }
+}
+
+static AttributeProto_AttributeType ToSingletonType(AttributeProto_AttributeType type) {
+  switch (type) {
+    case AttributeProto_AttributeType_FLOATS:
+      return AttributeProto_AttributeType_FLOAT;
+    case AttributeProto_AttributeType_INTS:
+      return AttributeProto_AttributeType_INT;
+    case AttributeProto_AttributeType_STRINGS:
+      return AttributeProto_AttributeType_STRING;
+    case AttributeProto_AttributeType_TENSORS:
+      return AttributeProto_AttributeType_TENSOR;
+    case AttributeProto_AttributeType_GRAPHS:
+      return AttributeProto_AttributeType_GRAPH;
+    case AttributeProto_AttributeType_SPARSE_TENSORS:
+      return AttributeProto_AttributeType_SPARSE_TENSOR;
+    case AttributeProto_AttributeType_TYPE_PROTOS:
+      return AttributeProto_AttributeType_TYPE_PROTO;
+    default:
+      return type;
+  }
 }
 
 Status OnnxParser::Parse(AttributeProto& attr, std::string& name) {
@@ -483,33 +674,40 @@ Status OnnxParser::Parse(AttributeProto& attr, std::string& name) {
   }
   MATCH('=');
   if (NextChar() == '[') {
-    // Parse a list of values. For now, empty list is not allowed, as we need to
-    // figure out a type for the attribute.
-    std::vector<Literal> vals;
+    // Parse a list of values. For an empty list, the type MUST be specified
+    // using the type-annotation syntax of ": type".
     MATCH('[');
-    do {
-      AttributeProto nextval;
-      CHECK_PARSER_STATUS(ParseSingleAttributeValue(nextval));
-      switch (nextval.type()) {
-        case AttributeProto_AttributeType_INT:
-          attr.set_type(AttributeProto_AttributeType_INTS);
-          attr.add_ints(nextval.i());
-          break;
-        case AttributeProto_AttributeType_FLOAT:
-          attr.set_type(AttributeProto_AttributeType_FLOATS);
-          attr.add_floats(nextval.f());
-          break;
-        case AttributeProto_AttributeType_STRING:
-          attr.add_strings(nextval.s());
-          attr.set_type(AttributeProto_AttributeType_STRINGS);
-          break;
-        default:
-          break;
-      }
-    } while (Matches(','));
+    if (NextChar() != ']') {
+      do {
+        AttributeProto nextval;
+        auto expected_type = ToSingletonType(attr.type());
+        CHECK_PARSER_STATUS(ParseSingleAttributeValue(nextval, expected_type));
+        switch (nextval.type()) {
+          case AttributeProto_AttributeType_INT:
+            attr.set_type(AttributeProto_AttributeType_INTS);
+            attr.add_ints(nextval.i());
+            break;
+          case AttributeProto_AttributeType_FLOAT:
+            attr.set_type(AttributeProto_AttributeType_FLOATS);
+            attr.add_floats(nextval.f());
+            break;
+          case AttributeProto_AttributeType_STRING:
+            attr.add_strings(nextval.s());
+            attr.set_type(AttributeProto_AttributeType_STRINGS);
+            break;
+          default:
+            break;
+        }
+      } while (Matches(','));
+    } else {
+      if (attr.type() == AttributeProto_AttributeType_UNDEFINED)
+        return ParseError("Empty list attribute value requires type annotation.");
+      if (IsSingletonAttribute(attr.type()))
+        return ParseError("Singleton attribute value cannot be specified as a list.");
+    }
     MATCH(']');
   } else {
-    CHECK_PARSER_STATUS(ParseSingleAttributeValue(attr));
+    CHECK_PARSER_STATUS(ParseSingleAttributeValue(attr, attr.type()));
   }
   return Status::OK();
 }
@@ -526,19 +724,30 @@ Status OnnxParser::Parse(AttrList& attrlist) {
 }
 
 Status OnnxParser::Parse(NodeProto& node) {
+  if (Matches('[')) {
+    std::string name;
+    CHECK_PARSER_STATUS(ParseOptionalQuotableIdentifier(name));
+    *node.mutable_name() = name;
+    MATCH(']');
+  }
   PARSE(*node.mutable_output());
   MATCH('=');
-  std::string domain("");
-  std::string id;
-  ParseIdentifier(id);
+  std::string domain;
+  std::string id = ParseOptionalIdentifier();
   while (Matches('.')) {
     if (!domain.empty())
       domain += ".";
     domain += id;
-    ParseIdentifier(id);
+    CHECK_PARSER_STATUS(ParseIdentifier(id));
   }
   node.set_domain(domain);
   node.set_op_type(id);
+
+  if (Matches(':')) {
+    std::string overload;
+    CHECK_PARSER_STATUS(ParseIdentifier(overload));
+    node.set_overload(overload);
+  }
   PARSE(*node.mutable_attribute());
   MATCH('(');
   PARSE(*node.mutable_input());
@@ -561,7 +770,7 @@ Status OnnxParser::Parse(NodeList& nodelist) {
 
 Status OnnxParser::Parse(GraphProto& graph) {
   std::string id;
-  ParseIdentifier(id);
+  CHECK_PARSER_STATUS(ParseQuotableIdentifier(id));
   return Parse(id, graph);
 }
 
@@ -571,7 +780,7 @@ Status OnnxParser::Parse(std::string name, GraphProto& graph) {
   CHECK_PARSER_STATUS(ParseInput(*graph.mutable_input(), *graph.mutable_initializer()));
   MATCH('=');
   MATCH('>', false);
-  PARSE(*graph.mutable_output());
+  CHECK_PARSER_STATUS(ParseGraphInputOutput(*graph.mutable_output()));
   CHECK_PARSER_STATUS(ParseValueInfo(*graph.mutable_value_info(), *graph.mutable_initializer()));
   return Parse(*graph.mutable_node());
 }
@@ -596,6 +805,10 @@ Status OnnxParser::Parse(FunctionProto& fn) {
           PARSE_TOKEN(strval);
           fn.set_domain(strval);
           break;
+        case KeyWordMap::KeyWord::OVERLOAD_KW:
+          PARSE_TOKEN(strval);
+          fn.set_overload(strval);
+          break;
         default:
           return ParseError("Unhandled keyword.");
       }
@@ -603,14 +816,18 @@ Status OnnxParser::Parse(FunctionProto& fn) {
     MATCH('>');
   }
   std::string id;
-  ParseIdentifier(id);
+  CHECK_PARSER_STATUS(ParseQuotableIdentifier(id));
   fn.set_name(id);
 
   PARSE('<', *fn.mutable_attribute(), *fn.mutable_attribute_proto(), '>');
-  PARSE('(', *fn.mutable_input(), ')');
+  fn.mutable_value_info()->Clear();
+  CHECK_PARSER_STATUS(ParseFunctionInputOutput(*fn.mutable_input(), *fn.mutable_value_info()));
   MATCH('=');
   MATCH('>', false);
-  PARSE('(', *fn.mutable_output(), ')');
+  CHECK_PARSER_STATUS(ParseFunctionInputOutput(*fn.mutable_output(), *fn.mutable_value_info()));
+  if (NextChar() == '<') {
+    PARSE('<', *fn.mutable_value_info(), '>');
+  }
   return Parse(*fn.mutable_node());
 }
 
@@ -635,7 +852,7 @@ Status OnnxParser::Parse(OpsetIdList& opsets) {
 Status OnnxParser::Parse(ModelProto& model) {
   model.Clear();
   std::string strval;
-  int64_t intval;
+  int64_t intval = 0;
   if (Matches('<')) {
     do {
       KeyWordMap::KeyWord keyword = KeyWordMap::KeyWord::NONE;
@@ -673,14 +890,7 @@ Status OnnxParser::Parse(ModelProto& model) {
           auto& metadata_props = *model.mutable_metadata_props();
           MATCH('[');
           if (!Matches(']')) {
-            do {
-              auto* metadata = metadata_props.Add();
-              PARSE_TOKEN(strval);
-              metadata->set_key(strval);
-              MATCH(':');
-              PARSE_TOKEN(strval);
-              metadata->set_value(strval);
-            } while (Matches(','));
+            PARSE(metadata_props);
             MATCH(']');
           }
           break;
@@ -699,5 +909,17 @@ Status OnnxParser::Parse(ModelProto& model) {
   }
   return Status::OK();
 }
+const std::unordered_map<std::string, KeyWordMap::KeyWord>& KeyWordMap::Instance() {
+  static KeyWordMap instance;
+  return instance.map_;
+}
 
+const std::string& KeyWordMap::ToString(KeyWord kw) {
+  static std::string undefined("undefined");
+  for (const auto& pair : Instance()) {
+    if (pair.second == kw)
+      return pair.first;
+  }
+  return undefined;
+}
 } // namespace ONNX_NAMESPACE

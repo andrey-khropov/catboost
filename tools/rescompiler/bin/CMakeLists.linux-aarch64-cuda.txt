@@ -19,11 +19,12 @@ target_link_libraries(rescompiler PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   library-cpp-resource
 )
 
 target_allocator(rescompiler
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(rescompiler PRIVATE

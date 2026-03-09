@@ -18,6 +18,7 @@ add_executable(catboost-libs-metrics-ut)
 target_link_libraries(catboost-libs-metrics-ut PUBLIC
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   library-cpp-cpuid_check
   cpp-testing-unittest_main
   catboost-libs-metrics
@@ -57,6 +58,7 @@ target_sources(catboost-libs-metrics-ut PRIVATE
   ${PROJECT_SOURCE_DIR}/catboost/libs/metrics/ut/normalized_gini_ut.cpp
   ${PROJECT_SOURCE_DIR}/catboost/libs/metrics/ut/precision_recall_at_k_ut.cpp
   ${PROJECT_SOURCE_DIR}/catboost/libs/metrics/ut/quantile_ut.cpp
+  ${PROJECT_SOURCE_DIR}/catboost/libs/metrics/ut/rmspe_ut.cpp
   ${PROJECT_SOURCE_DIR}/catboost/libs/metrics/ut/smape_ut.cpp
   ${PROJECT_SOURCE_DIR}/catboost/libs/metrics/ut/stochastic_filter_ut.cpp
   ${PROJECT_SOURCE_DIR}/catboost/libs/metrics/ut/zero_one_loss_ut.cpp

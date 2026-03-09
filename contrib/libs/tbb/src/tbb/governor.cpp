@@ -1,5 +1,6 @@
 /*
-    Copyright (c) 2005-2024 Intel Corporation
+    Copyright (c) 2005-2025 Intel Corporation
+    Copyright (c) 2025 UXL Foundation Contributors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +24,7 @@
 #include "dynamic_link.h"
 #include "concurrent_monitor.h"
 #include "thread_dispatcher.h"
+#include "load_tbbbind.h"
 
 #include "oneapi/tbb/task_group.h"
 #include "oneapi/tbb/global_control.h"
@@ -39,6 +41,22 @@
 
 #ifdef EMSCRIPTEN
 #include <emscripten/stack.h>
+#endif
+
+// ASan detection: define HAS_SANITIZE_ADDRESS regardless
+// of the compiler when we are in an address-sanitized build.
+#if defined(HAS_SANITIZE_ADDRESS)
+#undef HAS_SANITIZE_ADDRESS
+#endif
+
+#if defined(__SANITIZE_ADDRESS__)
+// gcc
+#define HAS_SANITIZE_ADDRESS
+#elif defined(__has_feature)
+// clang
+#if __has_feature(address_sanitizer)
+#define HAS_SANITIZE_ADDRESS
+#endif
 #endif
 
 namespace tbb {
@@ -151,17 +169,16 @@ bool governor::does_client_join_workers(const rml::tbb_client &client) {
     3) If the user app strives to conserve the memory by cutting stack size, it
     should do this for TBB workers too (as in the #1).
 */
-static std::uintptr_t get_stack_base(std::size_t stack_size) {
+static void get_stack_attributes(std::uintptr_t& stack_base, std::size_t& stack_size, std::size_t fallback_stack_size) {
     // Stacks are growing top-down. Highest address is called "stack base",
     // and the lowest is "stack limit".
+    stack_size = fallback_stack_size;
 #if __TBB_USE_WINAPI
-    suppress_unused_warning(stack_size);
     NT_TIB* pteb = (NT_TIB*)NtCurrentTeb();
     __TBB_ASSERT(&pteb < pteb->StackBase && &pteb > pteb->StackLimit, "invalid stack info in TEB");
-    return reinterpret_cast<std::uintptr_t>(pteb->StackBase);
+    stack_base = reinterpret_cast<std::uintptr_t>(pteb->StackBase);
 #elif defined(EMSCRIPTEN)
-    suppress_unused_warning(stack_size);
-    return reinterpret_cast<std::uintptr_t>(emscripten_stack_get_base());
+    stack_base = reinterpret_cast<std::uintptr_t>(emscripten_stack_get_base());
 #else
     // There is no portable way to get stack base address in Posix, so we use
     // non-portable method (on all modern Linux) or the simplified approach
@@ -170,17 +187,18 @@ static std::uintptr_t get_stack_base(std::size_t stack_size) {
 
     // Points to the lowest addressable byte of a stack.
     void* stack_limit = nullptr;
-#if __linux__ && !__bg__
+#if __linux__ && !__bg__ && !defined(HAS_SANITIZE_ADDRESS)
     size_t np_stack_size = 0;
     pthread_attr_t np_attr_stack;
     if (0 == pthread_getattr_np(pthread_self(), &np_attr_stack)) {
         if (0 == pthread_attr_getstack(&np_attr_stack, &stack_limit, &np_stack_size)) {
             __TBB_ASSERT( &stack_limit > stack_limit, "stack size must be positive" );
+            if (np_stack_size > 0)
+                stack_size = np_stack_size;
         }
         pthread_attr_destroy(&np_attr_stack);
     }
 #endif /* __linux__ */
-    std::uintptr_t stack_base{};
     if (stack_limit) {
         stack_base = reinterpret_cast<std::uintptr_t>(stack_limit) + stack_size;
     } else {
@@ -188,7 +206,6 @@ static std::uintptr_t get_stack_base(std::size_t stack_size) {
         int anchor{};
         stack_base = reinterpret_cast<std::uintptr_t>(&anchor);
     }
-    return stack_base;
 #endif /* __TBB_USE_WINAPI */
 }
 
@@ -219,8 +236,8 @@ void governor::init_external_thread() {
     td.attach_arena(a, /*slot index*/ 0);
     __TBB_ASSERT(td.my_inbox.is_idle_state(false), nullptr);
 
-    stack_size = a.my_threading_control->worker_stack_size();
-    std::uintptr_t stack_base = get_stack_base(stack_size);
+    std::uintptr_t stack_base{};
+    get_stack_attributes(stack_base, stack_size, a.my_threading_control->worker_stack_size());
     task_dispatcher& task_disp = td.my_arena_slot->default_task_dispatcher();
     td.enter_task_dispatcher(task_disp, calculate_stealing_threshold(stack_base, stack_size));
 
@@ -346,6 +363,7 @@ bool __TBB_EXPORTED_FUNC finalize(d1::task_scheduler_handle& handle, std::intptr
 #pragma weak __TBB_internal_apply_affinity
 #pragma weak __TBB_internal_restore_affinity
 #pragma weak __TBB_internal_get_default_concurrency
+#pragma weak __TBB_internal_set_tbbbind_assertion_handler
 
 extern "C" {
 void __TBB_internal_initialize_system_topology(
@@ -363,6 +381,8 @@ void __TBB_internal_apply_affinity( binding_handler* handler_ptr, int slot_num )
 void __TBB_internal_restore_affinity( binding_handler* handler_ptr, int slot_num );
 
 int __TBB_internal_get_default_concurrency( int numa_id, int core_type_id, int max_threads_per_core );
+
+void __TBB_internal_set_tbbbind_assertion_handler( assertion_handler_type handler );
 }
 #endif /* __TBB_WEAK_SYMBOLS_PRESENT */
 
@@ -373,6 +393,7 @@ static void dummy_deallocate_binding_handler ( binding_handler* ) { }
 static void dummy_apply_affinity ( binding_handler*, int ) { }
 static void dummy_restore_affinity ( binding_handler*, int ) { }
 static int dummy_get_default_concurrency( int, int, int ) { return governor::default_num_threads(); }
+static void dummy_set_assertion_handler( assertion_handler_type ) { }
 
 // Handlers for communication with TBBbind
 static void (*initialize_system_topology_ptr)(
@@ -392,6 +413,8 @@ static void (*restore_affinity_ptr)( binding_handler* handler_ptr, int slot_num 
     = dummy_restore_affinity;
 int (*get_default_concurrency_ptr)( int numa_id, int core_type_id, int max_threads_per_core )
     = dummy_get_default_concurrency;
+void (*set_assertion_handler_ptr)( assertion_handler_type handler )
+    = dummy_set_assertion_handler;
 
 #if _WIN32 || _WIN64 || __unix__ || __APPLE__
 
@@ -409,29 +432,7 @@ static const dynamic_link_descriptor TbbBindLinkTable[] = {
 };
 
 static const unsigned LinkTableSize = sizeof(TbbBindLinkTable) / sizeof(dynamic_link_descriptor);
-
-#if TBB_USE_DEBUG
-#define DEBUG_SUFFIX "_debug"
-#else
-#define DEBUG_SUFFIX
-#endif /* TBB_USE_DEBUG */
-
-#if _WIN32 || _WIN64
-#define LIBRARY_EXTENSION ".dll"
-#define LIBRARY_PREFIX
-#elif __APPLE__
-#define LIBRARY_EXTENSION __TBB_STRING(.3.dylib)
-#define LIBRARY_PREFIX "lib"
-#elif __unix__
-#define LIBRARY_EXTENSION __TBB_STRING(.so.3)
-#define LIBRARY_PREFIX "lib"
-#endif /* __unix__ */
-
-#define TBBBIND_NAME LIBRARY_PREFIX "tbbbind" DEBUG_SUFFIX LIBRARY_EXTENSION
-#define TBBBIND_2_0_NAME LIBRARY_PREFIX "tbbbind_2_0" DEBUG_SUFFIX LIBRARY_EXTENSION
-
-#define TBBBIND_2_5_NAME LIBRARY_PREFIX "tbbbind_2_5" DEBUG_SUFFIX LIBRARY_EXTENSION
-#endif /* _WIN32 || _WIN64 || __unix__ */
+#endif /* _WIN32 || _WIN64 || __unix__ || __APPLE__ */
 
 // Representation of system hardware topology information on the TBB side.
 // System topology may be initialized by third-party component (e.g. hwloc)
@@ -457,7 +458,7 @@ const char* load_tbbbind_shared_object() {
     GetNativeSystemInfo(&si);
     if (si.dwNumberOfProcessors > 32) return nullptr;
 #endif /* _WIN32 && !_WIN64 */
-    for (const auto& tbbbind_version : {TBBBIND_2_5_NAME, TBBBIND_2_0_NAME, TBBBIND_NAME}) {
+    for (const auto& tbbbind_version : tbbbind_libraries_list) {
         if (dynamic_link(tbbbind_version, TbbBindLinkTable, LinkTableSize, nullptr, DYNAMIC_LINK_LOCAL_BINDING)) {
             return tbbbind_version;
         }
@@ -482,6 +483,14 @@ void initialization_impl() {
     governor::one_time_init();
 
     if (const char* tbbbind_name = load_tbbbind_shared_object()) {
+        // If the setter function is present, set the TBBbind assertion handler to use TBB's
+        // assertion_failure function. If not, set_assertion_handler_ptr falls back to the dummy.
+        const dynamic_link_descriptor optional_set_assertion_handler[] =
+            {DLD(__TBB_internal_set_tbbbind_assertion_handler, set_assertion_handler_ptr)};
+        dynamic_link(tbbbind_name, optional_set_assertion_handler, 1, nullptr,
+                     DYNAMIC_LINK_LOCAL_BINDING);
+        set_assertion_handler_ptr(assertion_failure);
+
         initialize_system_topology_ptr(
             processor_groups_num(),
             numa_nodes_count, numa_nodes_indexes,
@@ -589,11 +598,16 @@ void constraints_assertion(d1::constraints c) {
 int __TBB_EXPORTED_FUNC constraints_default_concurrency(const d1::constraints& c, intptr_t /*reserved*/) {
     constraints_assertion(c);
 
+    const int default_num_threads = int(governor::default_num_threads());
+
     if (c.numa_id >= 0 || c.core_type >= 0 || c.max_threads_per_core > 0) {
         system_topology::initialize();
-        return get_default_concurrency_ptr(c.numa_id, c.core_type, c.max_threads_per_core);
+        const int constrained_default_concurrency =
+            get_default_concurrency_ptr(c.numa_id, c.core_type, c.max_threads_per_core);
+        __TBB_ASSERT(constrained_default_concurrency >= 0, "Infinitely set HWLOC mask?");
+        return std::min(constrained_default_concurrency, default_num_threads);
     }
-    return governor::default_num_threads();
+    return default_num_threads;
 }
 
 int __TBB_EXPORTED_FUNC constraints_threads_per_core(const d1::constraints&, intptr_t /*reserved*/) {

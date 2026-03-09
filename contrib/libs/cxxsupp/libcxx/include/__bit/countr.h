@@ -6,15 +6,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-// TODO: __builtin_ctzg is available since Clang 19 and GCC 14. When support for older versions is dropped, we can
-//  refactor this code to exclusively use __builtin_ctzg.
-
 #ifndef _LIBCPP___BIT_COUNTR_H
 #define _LIBCPP___BIT_COUNTR_H
 
-#include <__bit/rotate.h>
+#include <__assert>
 #include <__concepts/arithmetic.h>
 #include <__config>
+#include <__type_traits/is_unsigned.h>
 #include <limits>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
@@ -26,21 +24,20 @@ _LIBCPP_PUSH_MACROS
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
-_LIBCPP_NODISCARD inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR int __libcpp_ctz(unsigned __x) _NOEXCEPT {
+[[__nodiscard__]] inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR int __libcpp_ctz(unsigned __x) _NOEXCEPT {
   return __builtin_ctz(__x);
 }
-
-_LIBCPP_NODISCARD inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR int __libcpp_ctz(unsigned long __x) _NOEXCEPT {
+[[__nodiscard__]] inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR int __libcpp_ctz(unsigned long __x) _NOEXCEPT {
   return __builtin_ctzl(__x);
 }
-
-_LIBCPP_NODISCARD inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR int __libcpp_ctz(unsigned long long __x) _NOEXCEPT {
+[[__nodiscard__]] inline _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR int __libcpp_ctz(unsigned long long __x) _NOEXCEPT {
   return __builtin_ctzll(__x);
 }
 
 template <class _Tp>
-_LIBCPP_NODISCARD _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14 int __countr_zero(_Tp __t) _NOEXCEPT {
-#if __has_builtin(__builtin_ctzg)
+[[__nodiscard__]] _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR int __countr_zero(_Tp __t) _NOEXCEPT {
+  static_assert(is_unsigned<_Tp>::value, "__countr_zero only works with unsigned types");
+#if __has_builtin(__builtin_ctzg) && !defined(__CUDACC__)
   return __builtin_ctzg(__t, numeric_limits<_Tp>::digits);
 #else  // __has_builtin(__builtin_ctzg)
   if (__t == 0)

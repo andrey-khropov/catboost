@@ -206,6 +206,9 @@ MakeRegister(LossInfos,
     Registree(SMAPE,
         EMetricAttribute::IsRegression
     ),
+    Registree(RMSPE,
+        EMetricAttribute::IsRegression
+    ),
     Registree(Huber,
         EMetricAttribute::IsRegression
         | EMetricAttribute::HasGpuImplementation
@@ -537,6 +540,7 @@ static const TVector<ELossFunction> RegressionObjectives = {
     ELossFunction::LogLinQuantile,
     ELossFunction::Expectile,
     ELossFunction::MAPE,
+    ELossFunction::RMSPE,
     ELossFunction::Poisson,
     ELossFunction::Lq,
     ELossFunction::Huber,
@@ -706,6 +710,18 @@ bool IsMultiTargetObjective(ELossFunction loss) {
 
 bool IsMultiTargetObjective(TStringBuf loss) {
     return IsMultiTargetObjective(ParseLossType(loss));
+}
+
+bool IsMultiClassCompatibleObjective(ELossFunction lossFunction) {
+    if (!IsClassificationObjective(lossFunction)) {
+        return false;
+    }
+    auto info = GetInfo(lossFunction);
+    return info->HasFlags(EMetricAttribute::IsMultiClassCompatible);
+}
+
+bool IsMultiClassCompatibleObjective(TStringBuf lossDescription) {
+    return IsMultiClassCompatibleObjective(ParseLossType(lossDescription));
 }
 
 bool IsMultiRegressionMetric(ELossFunction loss) {

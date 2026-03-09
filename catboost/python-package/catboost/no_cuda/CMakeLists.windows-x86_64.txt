@@ -45,6 +45,7 @@ target_compile_options(_catboost_no_cuda PRIVATE
 target_link_libraries(_catboost_no_cuda PUBLIC
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   Python3::Module
   libs-gpu_config-force_no_cuda
   catboost-libs-carry_model
@@ -70,6 +71,7 @@ target_link_libraries(_catboost_no_cuda PUBLIC
   private-libs-options
   private-libs-quantized_pool_analysis
   private-libs-target
+  library-cpp-float16
   library-cpp-grid_creator
   cpp-json-writer
   cpp-text_processing-tokenizer
@@ -87,6 +89,7 @@ target_cython_sources(_catboost_no_cuda PRIVATE
 target_sources(_catboost_no_cuda PRIVATE
   ${PROJECT_SOURCE_DIR}/catboost/python-package/catboost/helpers.cpp
   ${PROJECT_SOURCE_DIR}/catboost/python-package/catboost/monoforest_helpers.cpp
+  ${PROJECT_SOURCE_DIR}/catboost/python-package/catboost/arrow.cpp
 )
 
 
@@ -95,6 +98,8 @@ use_export_script(_catboost_no_cuda
 )
 
 target_cython_options(_catboost_no_cuda
+  -X
+  legacy_implicit_noexcept=True
   -E
   UNAME_SYSNAME=Windows
   --module-name

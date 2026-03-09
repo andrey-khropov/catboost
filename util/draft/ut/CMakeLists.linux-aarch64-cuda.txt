@@ -19,12 +19,13 @@ target_link_libraries(util-draft-ut PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-testing-unittest_main
   util-draft
 )
 
 target_allocator(util-draft-ut
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(util-draft-ut PRIVATE

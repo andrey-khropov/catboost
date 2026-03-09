@@ -25,7 +25,6 @@ from . import runtime
 from . import path
 from . import environment
 
-
 MAX_OUT_LEN = 64 * 1024  # 64K
 MAX_MESSAGE_LEN = 1500
 SANITIZER_ERROR_PATTERN = br": ([A-Z][\w]+Sanitizer)"
@@ -733,6 +732,7 @@ def py_execute(
 
 
 def _format_error(error):
+    error, _ = _try_convert_bytes_to_string(error)
     return truncate(error, MAX_MESSAGE_LEN)
 
 
@@ -840,13 +840,13 @@ def _run_readelf(binary_path):
 
 
 def check_glibc_version(binary_path):
-    lucid_glibc_version = packaging.version.parse("2.11")
+    baseline_glibc_version = packaging.version.parse("2.16")
 
     for line in _run_readelf(binary_path).split('\n'):
         match = GLIBC_PATTERN.search(line)
         if not match:
             continue
-        assert packaging.version.parse(match.group(1)) <= lucid_glibc_version, match.group(0)
+        assert packaging.version.parse(match.group(1)) <= baseline_glibc_version, match.group(0)
 
 
 def backtrace_to_html(bt_filename, output):

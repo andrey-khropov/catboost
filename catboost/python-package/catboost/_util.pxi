@@ -52,9 +52,6 @@ cdef inline TString to_arcadia_string(s) except *:
     return TString(<const char*>&bytes_s[0], len(bytes_s))
 
 
-# versions for both TStringBuf and TString are needed because of Cython's bugs that prevent conversion
-# of 'const TString&' to 'TStringBuf' in generated code
-
 cdef inline bytes to_bytes(const TString& s):
     return bytes(s.data()[:s.size()])
 
@@ -72,11 +69,14 @@ cdef inline to_str(const TString& s):
 ctypedef fused common_tvector_type:
     int
     ui32
+    ui64
+    size_t
+    float
     double
     TString
 
 
-cdef tvector_to_py(TConstArrayRef[common_tvector_type] src):
+cdef array_ref_to_py(TConstArrayRef[common_tvector_type] src):
     cdef size_t i = 0
     cdef size_t src_size = src.size()
     res = []
@@ -90,13 +90,13 @@ cdef tvector_to_py(TConstArrayRef[common_tvector_type] src):
     return res
 
 
-cdef tvector_tvector_to_py(TConstArrayRef[TVector[common_tvector_type]] src):
+cdef array_ref_tvector_to_py(TConstArrayRef[TVector[common_tvector_type]] src):
     cdef size_t i = 0
     cdef size_t src_size = src.size()
     res = []
 
     for i in xrange(src_size):
-        res.append(tvector_to_py(<TConstArrayRef[common_tvector_type]>src[i]))
+        res.append(array_ref_to_py(<TConstArrayRef[common_tvector_type]>src[i]))
 
     return res
 

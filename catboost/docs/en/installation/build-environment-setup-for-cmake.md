@@ -20,21 +20,31 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
 
   Python 3.x interpreter. Python is used in some auxiliary scripts and [`conan` package manager](#conan) uses it.
 
+  {% cut "Previous requirements" %}
+
   For revisions before [98df6bf](https://github.com/catboost/catboost/commit/98df6bf8d4e6ab054b75b727f8d758c3399f4867) python had to have [`six` package](https://pypi.org/project/six/) installed.
+
+  {% endcut %}
 
 ### [CMake](https://cmake.org/)
 
-  Version 3.24+
+  Version >= 3.24, < 4.0.
+
+  [Issue about support for CMake 4.x](https://github.com/catboost/catboost/issues/3031)
+
+  {% cut "Previous requirements" %}
 
   Before commit [21a3f85](https://github.com/catboost/catboost/commit/21a3f856c118b8c2514f0307ca7b013d6329015e):
 
-  |Condition|Minimum version|
+  |Condition|Supported versions|
   |---------|---------|
-  | Target OS is Windows, build without CUDA support | 3.24 |
-  | Target OS is Windows, build with CUDA support | 3.21 |
-  | Target OS is Android | 3.21 |
-  | CUDA support, target OS is not Windows | 3.18 |
-  | None of the above | 3.15 |
+  | Target OS is Windows, build without CUDA support | >= 3.24, < 4.0 |
+  | Target OS is Windows, build with CUDA support | >= 3.21, < 4.0 |
+  | Target OS is Android | >= 3.21, < 4.0 |
+  | CUDA support, target OS is not Windows | >= 3.18, < 4.0 |
+  | None of the above | >= 3.15, < 4.0 |
+
+  {% endcut %}
 
 ### [Android NDK](https://developer.android.com/ndk/downloads) (only for Android target platform)
 
@@ -49,15 +59,19 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
       - [`gcc` compiler](https://gcc.gnu.org/), not used to compile {{ product }} code itself but used to build dependencies as Conan packages.
       - [`clang` compiler](https://clang.llvm.org/):
 
-        For `aarch64` CPU archirecture the minimum version is 18.1
+        The supported versions are 18.x - 21.x
 
-        For other CPU architectures the minimum version is 16
+        Possible version 22.x support depends on the next `conan` release. See [this issue](https://github.com/conan-io/conan/pull/19709).
 
       - [`lld` linker](https://lld.llvm.org/), version 7+
 
-      For Linux target the default CMake toolchain assumes that `clang` and `clang++` are available from the command line and will use them to compile {{ product }} components. If the default version of `clang` and `clang++` is not what is intended to be used for building then modify the toolchain file `$CATBOOST_SRC_ROOT/build/toolchains/clang.toolchain` - replace all occurences of `clang` and `clang++` with `clang-$CLANG_VERSION` and `clang++-$CLANG_VERSION` respectively where `$CLANG_VERSION` is the version of `clang` you want to use like, for example, `16` or `17` (must be already installed).
+      For Linux target the default CMake toolchain assumes that `clang`, `clang++` and `ld.lld` are available from the command line and will use them to compile and link {{ product }} components. If the default versions of `clang`, `clang++`, `ld.lld` are not what is intended to be used for building then modify the toolchain file `$CATBOOST_SRC_ROOT/build/toolchains/clang.toolchain` - replace all occurences of `clang`, `clang++` and `ld.lld` with `clang-$LLVM_VERSION`, `clang++-$LLVM_VERSION` and `ld.lld-$LLVM_VERSION` respectively where `$LLVM_VERSION` is the version of `clang` or `lld` you want to use like, for example, `19` or `20` (must be already installed).
 
       For compilation with CUDA support the default CMake toolchain assumes that `clang-14` is available from the command line.
+
+      {% cut "Previous requirements" %}
+
+      For revisions before [38d5db4](https://github.com/catboost/catboost/commit/38d5db4751183dd1f671a9bd23a37e80212bdb78) supported `clang` versions for `x86_64` architecture have been 16 - 21
 
       For revisions before [8698718](https://github.com/catboost/catboost/commit/86987189bd2d016ea1241a98d78319c0e900b99c) supported `clang` versions for `x86_64` architecture have been 14 - 18
 
@@ -67,15 +81,23 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
 
       For revisions before [136f14f](https://github.com/catboost/catboost/commit/136f14f5d55119028a7bb1886814775cd1e2c649) the minimal supported `clang` version has been 12.
 
+      {% endcut %}
+
       Android target uses its own CMake toolchain and compiler tools specified there are all provided by the NDK.
 
   - macOS
 
       - XCode command line tools (must contain `clang` with version 15+, so XCode version must be greater than 15.0 as well)
 
+      {% cut "Previous requirements" %}
+
+      For revisions before [734722c](https://github.com/catboost/catboost/commit/734722c121a2506c0da59e6c14524b63d01a1a66) supported `clang` versions have been 15 - 16 (means XCode version must have been 15.0 - 16.2)
+
       For revisions before [1d5e677](https://github.com/catboost/catboost/commit/1d5e677b916a4ce3375b3200c4c2f95884d481de) the minimal supported `clang` version has been 14 (means XCode version must have been 14.0 as well)
 
       For revisions before [136f14f](https://github.com/catboost/catboost/commit/136f14f5d55119028a7bb1886814775cd1e2c649) the minimal supported `clang` version has been 12 (means XCode version must have been 12.0+ as well).
+
+      {% endcut %}
 
   - Windows
 
@@ -85,13 +107,19 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
         - Microsoft Visual Studio 2022 with `clang-cl` compiler with version 14+ installed (can be selected in `Individual components` pane of the Visual Studio Installer for Visual Studio 2022). See details [here](https://learn.microsoft.com/en-us/cpp/build/clang-support-msbuild?view=msvc-170)
 
       - for builds with CUDA support:
-        - Microsoft Visual Studio 2019 or 2022 with MSVC v142 -  C++ x64/x86 build tools version v14.28 - 16.x or v14.29 - 16.x (can be selected in `Individual components` pane of the Visual Studio Installer for a particular Visual Studio version)
+        - Microsoft Visual Studio 2019 or 2022 with MSVC v142 -  C++ x64/x86 build tools version v14.28 - 16.x, v14.29 - 16.x or 14.4x (can be selected in `Individual components` pane of the Visual Studio Installer for a particular Visual Studio version)
+
+      {% cut "Previous requirements" %}
+
+      For revisions before [b6b6b3f](https://github.com/catboost/catboost/commit/b6b6b3f2747c0c903beb5679ac5d674fc8653cd0) builds with CUDA required MSVC v142 - Visual Studio 2019 C++ x64/x86 build tools version v14.28 - 16.x or v14.29 - 16.x.
 
       For revisions before [8698718](https://github.com/catboost/catboost/commit/86987189bd2d016ea1241a98d78319c0e900b99c) builds without CUDA required Microsoft Visual Studio 2022 with `clang-cl` compiler with versions 14 - 18.
 
       For revisions before [d5ac776](https://github.com/catboost/catboost/commit/d5ac776e0dd4eeb2ffd99d3fabaaee3e86b8dba1) builds without CUDA have also been using MSVC v142 - Visual Studio 2019 C++ x64/x86 build tools version v14.28 - 16.8 or v14.28 - 16.9.
 
       For revisions before between [d5ac776](https://github.com/catboost/catboost/commit/d5ac776e0dd4eeb2ffd99d3fabaaee3e86b8dba1) and [136f14f](https://github.com/catboost/catboost/commit/136f14f5d55119028a7bb1886814775cd1e2c649) for builds without CUDA support the minimum supported `clang-cl` version has been 12 (so, Visual Studio 2019 that includes it has also been supported).
+
+      {% endcut %}
 
   {% endlist %}
 
@@ -103,18 +131,26 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
 
   CUDA version 11.8 is supported by default (because it contains the biggest set of supported target CUDA compute architectures).
 
-  Other CUDA versions (11.4 - 12.2) can also be used but require changing target compute architecture options in affected CMake targets.
+  CUDA versions 11.4 - 12.2 are also supported, but require changing the default list of CUDA architectures for which device code is generated. See the sections on building from source for details.
 
   CUDA 12.3+ support is in progress: [GitHub issue #2755](https://github.com/catboost/catboost/issues/2755).
 
+  {% cut "Previous requirements" %}
+
   For revisions before [45cc2e1](https://github.com/catboost/catboost/commit/45cc2e12189e8fef6b0ccfd30ac192efab22ae98) the minimal supported CUDA version has been 11.0 .
+
+  {% endcut %}
 
 
 ### [Conan](https://conan.io/) {#conan}
 
   Version 2.4.1+.
 
+  {% cut "Previous requirements" %}
+
   For revisions before [21a3f85](https://github.com/catboost/catboost/commit/21a3f856c118b8c2514f0307ca7b013d6329015e) versions 1.57.0 - 1.62.0 are supported and version 1.62.0 is required if you use python 3.12+.
+
+  {% endcut %}
 
   Used for some dependencies.
 
@@ -129,6 +165,8 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
   - Ninja
 
       [Ninja](https://ninja-build.org/) is the preferred build system for CMake.
+
+      For Windows builds version 1.13.0 is not supported because of [Ninja issue #2616](https://github.com/ninja-build/ninja/issues/2616)
 
       `ninja` command should be available from the command line.
 
@@ -145,7 +183,12 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
 ### JDK (only for components with JVM API)
 
   You have to install JDK to build components with JVM API (JVM applier and CatBoost for Apache Spark).
-  JDK version has to be 8+ for JVM applier or strictly 8 for CatBoost for Apache Spark.
+
+  JDK version has to be 8+ for JVM applier.
+
+  JDK version for CatBoost package for Apache Spark depends on Apache Spark version:
+  * Use JDK 8 for Apache Spark 3.x
+  * Use JDK 17 for Apache Spark 4.x.
 
   Set `JAVA_HOME` environment variable to point to the path of JDK installation to be used during build.
 
@@ -157,14 +200,24 @@ For building {{ product }} using Ya Make see [here](../concepts/build-from-sourc
 
   One convenient way to install different Python versions with development artifacts in one step is to use [pyenv](https://github.com/pyenv/pyenv) (and its variant for Windows - [pyenv-win](https://github.com/pyenv-win/pyenv-win))
 
-### Cython (only for Python package)
+### [Cython](https://cython.org/) (only for Python package)
 
-  [Cython](https://cython.org/) is required to build the python package.
+  Required only to build the python package.
+
+  Version 3.0.*, >= 3.0.10
 
   `cython` command should be available from the command line.
 
   {% cut "Previous requirements" %}
 
   Before revision [7b76b2c](https://github.com/catboost/catboost/commit/7b76b2cbece906fbc87d1187410d60fde8747d57) an additional installation of Cython had not been needed because [internal Cython from contrib](https://github.com/catboost/catboost/tree/30a96912bf8c0976a3450132e79d7dfa71dfda26/contrib/tools/cython) had been used.
+
+  {% endcut %}
+
+### [Numpy](https://numpy.org/) (only for Python package)
+
+  {% cut "Previous requirements" %}
+
+  Before revision [bdcf319](https://github.com/catboost/catboost/commit/bdcf31952223442f5e07867df7d6f75bfd61b523) an additional installation of Numpy had not been needed because [internal Numpy from contrib](https://github.com/catboost/catboost/tree/61c6cd88e8dcfa85306085fc18889f9dac32ec88/contrib/python/numpy) had been used.
 
   {% endcut %}

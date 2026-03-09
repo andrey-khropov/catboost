@@ -21,11 +21,12 @@ target_link_libraries(triecompiler PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   tools-triecompiler-lib
 )
 
 target_allocator(triecompiler
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(triecompiler PRIVATE

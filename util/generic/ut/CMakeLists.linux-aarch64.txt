@@ -26,13 +26,15 @@ target_link_libraries(util-generic-ut PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
+  build-cow-on
   cpp-testing-unittest_main
+  library-cpp-case_insensitive_string
   cpp-containers-absl_flat_hash
   tools-enum_parser-enum_serialization_runtime
 )
 
 target_allocator(util-generic-ut
-  cpp-malloc-jemalloc
+  system_allocator
 )
 
 target_link_options(util-generic-ut PRIVATE
@@ -101,6 +103,14 @@ target_sources(util-generic-ut PRIVATE
   ${PROJECT_SOURCE_DIR}/util/generic/yexception_ut.h
 )
 
+
+set_property(
+  SOURCE
+  ${PROJECT_SOURCE_DIR}/util/generic/yexception_ut.c
+  APPEND
+  PROPERTY
+  COMPILE_OPTIONS
+)
 
 set_property(
   TARGET
