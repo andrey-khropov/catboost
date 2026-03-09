@@ -271,7 +271,7 @@ jobs:
             }
           }
 
-      - if: false #name: Run pytest
+      - name: Run pytest
         shell: pwsh
         run: |
           $PSNativeCommandUseErrorActionPreference = $true
