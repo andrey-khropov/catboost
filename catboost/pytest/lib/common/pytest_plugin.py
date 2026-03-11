@@ -36,15 +36,30 @@ pytest_config = None
 results_to_canonize = defaultdict(lambda: defaultdict())
 
 
-def get_canonical_name(item):
+def _get_canonical_test_name(item):
     class_name, test_name = tools.split_node_id(item.nodeid)
-    filename = "{}.{}".format(class_name.split('.')[0], test_name)
-    if not filename:
-        filename = "test"
-    not_allowed_pattern = r"[\[\]:,]"
-    filename = re.sub(not_allowed_pattern, "_", filename)
-    filename = tools.normalize_filename(filename)
-    return filename
+    if class_name.endswith(".py"):
+        class_name = class_name[:-len(".py")]
+    return f'{class_name}.{test_name}'
+
+
+def _get_canonical_filename(name, length_limit=200):
+    # don't generate filenames with non-ascii characters that will be committed into the repository
+    unicode_free_name = ""
+
+    for symbol in name:
+        code = ord(symbol)
+        if 31 < code < 128:
+            unicode_free_name += chr(code)
+        else:
+            unicode_free_name += str(hex(code))
+    # Remove reserved characters
+    name = re.sub(r"[\[,\]'<>\:\"\/\\|?*]", "_", unicode_free_name)
+    # Reduce filename length to avoid hitting FS limit
+    if len(name) > length_limit:
+        hashsum = cityhash.CityHash64(name)
+        name = "{}-{}".format(name[: length_limit - len(hashsum) - 1], hashsum)
+    return name
 
 
 def get_diff_cmd_prefix(diff_tool_from_test_result):
@@ -91,13 +106,16 @@ class CanonicalProcessor(object):
 
                 test_dir_name = os.path.dirname(item.path)
                 all_tests_canondata_dir = os.path.join(test_dir_name)
-                canonical_name = get_canonical_name(item)
-                test_canondata_dir = os.path.join(all_tests_canondata_dir, 'canondata', canonical_name)
+
+                canonical_name = _get_canonical_test_name(item)
+                suitable_canonical_name = _get_canonical_filename(canonical_name)
+
+                test_canondata_dir = os.path.join(all_tests_canondata_dir, 'canondata', suitable_canonical_name)
 
                 res = obj(*args, **kwargs)
                 files_to_check = get_files_to_check(res)
 
-                results_to_canonize[test_dir_name][canonical_name] = files_to_check
+                results_to_canonize[test_dir_name][suitable_canonical_name] = files_to_check
 
                 for fname, spec in files_to_check.items():
                     canonical_full_path = os.path.join(test_canondata_dir, fname)

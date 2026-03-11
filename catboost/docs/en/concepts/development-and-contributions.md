@@ -45,7 +45,7 @@
 
 - CLI
 
-  1. Install [pytest](https://pytest.org/), [pandas](https://pypi.org/project/pandas/) and [catboost](https://pypi.org/project/catboost/) (used for reading column description files using `catboost.utils.read_cd`) packages for the python interpreter you intend to use.
+  1. Install [cityhash](https://pypi.org/project/cityhash/), [pytest](https://pytest.org/), [pandas](https://pypi.org/project/pandas/) and [catboost](https://pypi.org/project/catboost/) (used for reading column description files using `catboost.utils.read_cd`) packages for the python interpreter you intend to use.
     Optionally install [pytest-xdist](https://pytest-xdist.readthedocs.io/en/stable/) and [pytest-randomly](https://github.com/pytest-dev/pytest-randomly) to run tests in parallel (it will be faster).
 
       {% cut "Previous requirements" %}
