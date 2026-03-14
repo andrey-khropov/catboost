@@ -11069,9 +11069,6 @@ def test_pandas_categorical_with_categories_as_string_array():
 
 @pytest.mark.parametrize('problem_type', ['classification', 'regression', 'ranking', 'multilabel'])
 def test_train_with_embedding_features(task_type, problem_type):
-    if problem_type in ['classification', 'ranking']:
-        pytest.skip('We know it is broken')
-
 
     def make_train_y(problem_type):
         if problem_type == 'classification':
