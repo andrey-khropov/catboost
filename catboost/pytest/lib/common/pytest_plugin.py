@@ -2,11 +2,13 @@ from collections import defaultdict
 
 import os
 import pathlib
-import re
 import sys
+
+import json
 import tempfile
 import shutil
 import subprocess
+from typing import Any, Dict, List, Union
 
 import pytest
 
@@ -23,6 +25,7 @@ sys.path += [
 
 import yatest.common
 
+import yatest_lib.external
 import yatest_lib.ya
 
 from . import tools
@@ -43,25 +46,6 @@ def _get_canonical_test_name(item):
     return f'{class_name}.{test_name}'
 
 
-def _get_canonical_filename(name, length_limit=200):
-    # don't generate filenames with non-ascii characters that will be committed into the repository
-    unicode_free_name = ""
-
-    for symbol in name:
-        code = ord(symbol)
-        if 31 < code < 128:
-            unicode_free_name += chr(code)
-        else:
-            unicode_free_name += str(hex(code))
-    # Remove reserved characters
-    name = re.sub(r"[\[,\]'<>\:\"\/\\|?*]", "_", unicode_free_name)
-    # Reduce filename length to avoid hitting FS limit
-    if len(name) > length_limit:
-        hashsum = cityhash.CityHash64(name)
-        name = "{}-{}".format(name[: length_limit - len(hashsum) - 1], hashsum)
-    return name
-
-
 def get_diff_cmd_prefix(diff_tool_from_test_result):
     if diff_tool_from_test_result is None:
         if sys.platform == 'win32':
@@ -79,25 +63,81 @@ def get_diff_cmd_prefix(diff_tool_from_test_result):
         return diff_tool_from_test_result
 
 
-# return file -> {full_path, diff_cmd_prefix}
-def get_files_to_check(test_result):
-    if test_result is None:
-        test_result = []
-    elif not isinstance(test_result, list):
-        test_result = [test_result]
-
-    result = {}
-    for e in test_result:
-        full_path = e['uri'][7:]
-        result[os.path.basename(full_path)] = {
-            'full_path': full_path,
-            'diff_cmd_prefix': get_diff_cmd_prefix(e.get('diff_tool', None))
-        }
-
-    return result
-
-
 class CanonicalProcessor(object):
+    def __init__(self):
+        self._canondata = {}    # tests_dir -> test_name -> canon_data_spec
+
+    def _get_tests_dir_canondata(self, tests_dir: str) -> Dict[str, Dict[str, Any]]:
+        if tests_dir not in self._canondata:
+            canondata_dir = os.path.join(tests_dir, 'canondata')
+            if os.path.exists(canondata_dir):
+                with open(os.path.join(canondata_dir, 'result.json')) as f:
+                    self._canondata[tests_dir] = json.load(f)
+            else:
+                self._canondata[tests_dir] = {}
+        return self._canondata[tests_dir]
+
+    @staticmethod
+    def _compare_file_with_canonical(
+        canondata_base_dir: str,
+        result_file: yatest_lib.external.CanonicalObject,
+        canondata: Dict[str, Any]
+    ):
+        if not isinstance(result_file, yatest_lib.external.CanonicalObject):
+            base_error_msg = "Unexpected type in result"
+            sys.stderr.write(base_error_msg + f': {type(result_file)}\n')
+            pytest.fail(base_error_msg)
+        if not isinstance(canondata, dict):
+            base_error_msg = "Unexpected type in canondata element"
+            sys.stderr.write(base_error_msg + f': {type(canondata)}\n')
+            pytest.fail(base_error_msg)
+
+        result_file_path = result_file['uri'][7:]
+        if not os.path.exists(result_file_path):
+            base_error_msg = f"Result file '{os.path.basename(result_file_path)}' does not exist"
+            sys.stderr.write(base_error_msg + f"\n: Test result full path '{result_file_path}'\n")
+            pytest.fail(base_error_msg)
+        canonical_file_path = os.path.join(canondata_base_dir, canondata['uri'][7:])
+        if not os.path.exists(canonical_file_path):
+            base_error_msg = f"Canonical data for the file '{os.path.basename(canonical_file_path)}' does not exist"
+            sys.stderr.write(base_error_msg + f"\n: Canonical file full path '{canonical_file_path}'\n")
+            pytest.fail(base_error_msg)
+
+        diff_cmd_prefix = get_diff_cmd_prefix(result_file.get('diff_tool', None))
+        diff_cmd = diff_cmd_prefix + [canonical_file_path, result_file_path]
+        if subprocess.run(diff_cmd).returncode:
+            base_error_msg = f"Difference with canonical data for the file '{os.path.basename(canonical_file_path)}'"
+            sys.stderr.write(
+                base_error_msg + ':\n'
+                + f"Canonical file full path '{canonical_file_path}':\n"
+                + f"Test output full path '{result_file_path}':\n"
+            )
+            pytest.fail(base_error_msg)
+
+
+    @staticmethod
+    def _compare_with_canondata(
+        canondata_base_dir: str,
+        result : Union[yatest_lib.external.CanonicalObject, List[yatest_lib.external.CanonicalObject]],
+        canondata : Union[Dict[str, Any], List[Dict[str, Any]]]
+    ):
+        if isinstance(result, list):
+            if not isinstance(canondata, list):
+                pytest.fail('Result is a list but canondata is not a list')
+            if len(result) != len(canondata):
+                pytest.fail(f"Result has length {len(result)} but canondata has length {len(canondata)}")
+            for i in range(len(result)):
+                CanonicalProcessor._compare_file_with_canonical(
+                    canondata_base_dir,
+                    result[i],
+                    canondata[i],
+                )
+        else:
+            if not isinstance(canondata, dict):
+                pytest.fail('result has a single element, but canondata does not')
+            CanonicalProcessor._compare_file_with_canonical(canondata_base_dir, result, canondata)
+
+
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_call(self, item):  # noqa
         def get_wrapper(obj):
@@ -105,38 +145,28 @@ class CanonicalProcessor(object):
                 global results_to_canonize
 
                 test_dir_name = os.path.dirname(item.path)
-                all_tests_canondata_dir = os.path.join(test_dir_name)
+                canondata_for_dir = self._get_tests_dir_canondata(test_dir_name)
 
-                canonical_name = _get_canonical_test_name(item)
-                suitable_canonical_name = _get_canonical_filename(canonical_name)
+                canonical_test_name = _get_canonical_test_name(item)
 
-                test_canondata_dir = os.path.join(all_tests_canondata_dir, 'canondata', suitable_canonical_name)
+                maybe_canondata_for_test = canondata_for_dir.get(canonical_test_name)
 
                 res = obj(*args, **kwargs)
-                files_to_check = get_files_to_check(res)
 
-                results_to_canonize[test_dir_name][suitable_canonical_name] = files_to_check
-
-                for fname, spec in files_to_check.items():
-                    canonical_full_path = os.path.join(test_canondata_dir, fname)
-                    if not os.path.exists(canonical_full_path):
-                        base_error_msg = f"Canonical data for the file '{fname}' does not exist"
-                        sys.stderr.write(
-                            base_error_msg + ':\n'
-                            + f"Canonical file full path '{canonical_full_path}':\n"
+                if res is None:
+                    if maybe_canondata_for_test is not None:
+                        pytest.fail('There is saved canonical data but the test invocation returned None')
+                else:
+                    if maybe_canondata_for_test is None:
+                        pytest.fail(
+                            'Test invocation returned some data but there is no '
+                            'canonical data saved for it'
                         )
-                        pytest.fail(base_error_msg)
-
-                    diff_cmd = spec['diff_cmd_prefix'] + [canonical_full_path, spec['full_path']]
-
-                    if subprocess.run(diff_cmd).returncode:
-                        base_error_msg = f"Difference with canonical data for the file '{fname}'"
-                        sys.stderr.write(
-                            base_error_msg + ':\n'
-                            + f"Canonical file full path '{canonical_full_path}':\n"
-                            + f"Test output full path '{spec['full_path']}':\n"
-                        )
-                        pytest.fail(base_error_msg)
+                    CanonicalProcessor._compare_with_canondata(
+                        os.path.join(test_dir_name, 'canondata'),
+                        res,
+                        maybe_canondata_for_test,
+                    )
 
             return wrapper
 
