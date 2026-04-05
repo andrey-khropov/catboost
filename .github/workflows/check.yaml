@@ -3,7 +3,7 @@ name: Check build and tests
 on:
   push:
     branches:
-      - master
+      - binsaver_HasNonTrivialSerializer_constexpr
 
   pull_request:
 
