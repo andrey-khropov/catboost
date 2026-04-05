@@ -3,7 +3,7 @@ name: Check build and tests
 on:
   push:
     branches:
-      - master
+      - windows_server_2025
 
   pull_request:
 

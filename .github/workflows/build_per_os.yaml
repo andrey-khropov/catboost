@@ -55,7 +55,7 @@ env:
       "windows-x86_64" : {
         "executable_suffix": ".exe",
         "python_platform_tag": "win_amd64",
-        "runs_on": "windows-2022"
+        "runs_on": "windows-2025"
       }
     }
 
