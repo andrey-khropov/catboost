@@ -57,8 +57,11 @@ jobs:
     steps:
       - name: Install pyenv and python versions and pack to zip file
         run: |
-          brew install openssl@1.1 readline sqlite3 xz zlib tcl-tk@8 libb2
+          brew install openssl@1.1 openssl@3 readline sqlite3 xz zlib tcl-tk@8 libb2
           brew install pyenv
+
+
+          # There are build errors when trying to configure python 3.8 with OpenSSL 3 - so we have to use OpenSSL 1.1
 
           export OPENSSL_PATH=$(brew --prefix openssl@1.1)
           export CFLAGS="-I$OPENSSL_PATH/include -I$(brew --prefix bzip2)/include -I$(brew --prefix readline)/include -I$(xcrun --show-sdk-path)/usr/include"
@@ -66,14 +69,25 @@ jobs:
 
           export PYTHON_CONFIGURE_OPTS="--with-openssl=$OPENSSL_PATH"
 
-          # pyenv install -v 3.8.18
-          # cd $HOME/.pyenv/versions/ && ln -s 3.8.18 ./3.8
-          # pyenv install 3.9.19
-          # cd $HOME/.pyenv/versions/ && ln -s 3.9.19 ./3.9
-          # pyenv install 3.10.14
-          # cd $HOME/.pyenv/versions/ && ln -s 3.10.14 ./3.10
-          # pyenv install 3.11.9
-          # cd $HOME/.pyenv/versions/ && ln -s 3.11.9 ./3.11
+          pyenv install 3.8.18
+          cd $HOME/.pyenv/versions/ && ln -s 3.8.18 ./3.8
+
+
+          # Build other versions with OpenSSL 3
+
+          export OPENSSL_PATH=$(brew --prefix openssl@3)
+          export CFLAGS="-I$OPENSSL_PATH/include -I$(brew --prefix bzip2)/include -I$(brew --prefix readline)/include -I$(xcrun --show-sdk-path)/usr/include"
+          export LDFLAGS="-L$OPENSSL_PATH/lib -L$(brew --prefix readline)/lib -L$(brew --prefix zlib)/lib -L$(brew --prefix bzip2)/lib"
+
+          export PYTHON_CONFIGURE_OPTS="--with-openssl=$OPENSSL_PATH"
+
+
+          pyenv install 3.9.19
+          cd $HOME/.pyenv/versions/ && ln -s 3.9.19 ./3.9
+          pyenv install 3.10.14
+          cd $HOME/.pyenv/versions/ && ln -s 3.10.14 ./3.10
+          pyenv install 3.11.9
+          cd $HOME/.pyenv/versions/ && ln -s 3.11.9 ./3.11
           pyenv install -v 3.12.3
           cd $HOME/.pyenv/versions/ && ln -s 3.12.3 ./3.12
           pyenv install 3.13.1
