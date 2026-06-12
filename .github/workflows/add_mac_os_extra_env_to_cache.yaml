@@ -57,12 +57,18 @@ jobs:
     steps:
       - name: Install pyenv and python versions and pack to zip file
         run: |
+          echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+
           brew install openssl@3 readline sqlite3 xz zlib tcl-tk@8 libb2
+
+          echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 
           # pyenv builds cannot handle both openssl@1.1 and openssl@3 installed at the same time
           brew unlink openssl@1.1
 
           brew install pyenv
+
+          echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
 
           export OPENSSL_PATH=$(brew --prefix openssl@3)
           export CFLAGS="-I$OPENSSL_PATH/include -I$(brew --prefix bzip2)/include -I$(brew --prefix readline)/include -I$(xcrun --show-sdk-path)/usr/include"
