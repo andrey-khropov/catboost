@@ -223,6 +223,30 @@ constexpr Y_FORCE_INLINE int Y_UNUSED(Types&&...) {
 #endif
 
 /**
+ * @def Y_INITIALIZED
+ *
+ * This function can be used to silence erroneous bugprone-use-after-move warnings from clang-tidy.
+ * (see https://clang.llvm.org/extra/clang-tidy/checks/bugprone/use-after-move.html#silencing-erroneous-warnings)
+ *
+ * @code
+ * void Foo(T value, int i) {
+ *     if (i == 1) {
+ *         DoSomethingWith(std::move(value));
+ *     }
+ *     if (i == 2) {
+ *         Y_INITIALIZED(value);
+ *         DoOtherThingWith(std::move(value));
+ *     }
+ * }
+ */
+#if defined(__cplusplus)
+template <class... Types>
+constexpr Y_FORCE_INLINE int Y_INITIALIZED(Types&...) {
+    return 0; // constexpr void functions are not supported in c++11
+}
+#endif
+
+/**
  * @def Y_ASSUME
  *
  * Macro that tells the compiler that it can generate optimized code
@@ -812,4 +836,63 @@ Y_FORCE_INLINE void DoNotOptimizeAway(const T&) = delete;
     #define Y_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
 #else
     #define Y_NO_UNIQUE_ADDRESS
+#endif
+
+/**
+ * @def Y_TRIVIAL_ABI
+ *
+ * Indicates that a class or structure can be considered trivial for the purpose of calls.
+ *
+ * @see https://clang.llvm.org/docs/AttributeReference.html#trivial-abi
+ */
+#if Y_HAS_CPP_ATTRIBUTE(clang::trivial_abi)
+    #define Y_TRIVIAL_ABI [[clang::trivial_abi]]
+#else
+    #define Y_TRIVIAL_ABI
+#endif
+
+/**
+ * @def Y_CORO_AWAIT_ELIDABLE
+ *
+ * A class attribute which can be applied to a coroutine return type.
+ *
+ * Allows the compiler to apply heap allocation elision when the coroutine with such return type
+ * is immediately awaited or passed as an argument to a Y_CORO_AWAIT_ELIDABLE_ARGUMENT parameter.
+ *
+ * See https://clang.llvm.org/docs/AttributeReference.html#coro-await-elidable
+ */
+#if defined(__clang__) && Y_HAS_CPP_ATTRIBUTE(clang::coro_await_elidable)
+    #define Y_CORO_AWAIT_ELIDABLE [[clang::coro_await_elidable]]
+#else
+    #define Y_CORO_AWAIT_ELIDABLE
+#endif
+
+/**
+ * @def Y_CORO_AWAIT_ELIDABLE_ARGUMENT
+ *
+ * A function parameter attribute which allows the compiler to apply heap allocation elision for
+ * a coroutine with Y_CORO_AWAIT_ELIDABLE return type passed as argument to the annotated parameter.
+ *
+ * See https://clang.llvm.org/docs/AttributeReference.html#coro-await-elidable-argument
+ */
+#if defined(__clang__) && Y_HAS_CPP_ATTRIBUTE(clang::coro_await_elidable_argument)
+    #define Y_CORO_AWAIT_ELIDABLE_ARGUMENT [[clang::coro_await_elidable_argument]]
+#else
+    #define Y_CORO_AWAIT_ELIDABLE_ARGUMENT
+#endif
+
+/**
+ * @def Y_CORO_ONLY_DESTROY_WHEN_COMPLETE
+ *
+ * A class attribute which can be applied to a coroutine return type.
+ *
+ * Allows the compiler to skip generation of destructors for intermediate suspension points
+ * and reduce code size.
+ *
+ * See https://clang.llvm.org/docs/AttributeReference.html#coro-only-destroy-when-complete
+ */
+#if defined(__clang__) && Y_HAS_CPP_ATTRIBUTE(clang::coro_only_destroy_when_complete)
+    #define Y_CORO_ONLY_DESTROY_WHEN_COMPLETE [[clang::coro_only_destroy_when_complete]]
+#else
+    #define Y_CORO_ONLY_DESTROY_WHEN_COMPLETE
 #endif

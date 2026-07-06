@@ -7,12 +7,12 @@
 
 ```python
 staged_predict(data,
-    prediction_type=None,
-    ntree_start={{ fit--ntree_start }},
-    ntree_end=0,
-    eval_period=1,
-    thread_count=-1,
-    verbose=None)
+               prediction_type=None,
+               ntree_start={{ fit--ntree_start }},
+               ntree_end=0,
+               eval_period=1,
+               thread_count=-1,
+               verbose=None)
 ```
 
 ## {{ dl--parameters }} {#parameters}
@@ -38,6 +38,7 @@ For multiple objects:
 - {{ python-type--pandasDataFrame }}
 - {{ python_type__pandas-SparseDataFrame }}
 - {{ python-type--pandasSeries }}
+- [polars.DataFrame](https://docs.pola.rs/api/python/stable/reference/dataframe/index.html)
 - [{{ python-type__FeaturesData }}](../concepts/python-features-data__desc.md)
 - {% include [libsvm-scipy-except-dia](../_includes/work_src/reusage-formats/scipy-except-dia.md) %}
 

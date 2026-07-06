@@ -56,13 +56,26 @@ CUDA_LIBRARIES = {
     '-lnvJitLink_static': '-lnvJitLink',
 }
 
+CUDA_NO_FATBIN_LIBRARIES = {
+    '-lcudart_static',
+    '-lcudnn_graph_static',
+    '-lcudnn_heuristic_static',
+    '-lcufft_static_nocallback',
+    '-lcupti_static',
+    '-lnppc_static',
+    '-lnvonnxparser_static',
+    '-lnvptxcompiler_static',
+    '-lnvrtc-builtins_static',
+    '-lnvrtc_static',
+}
+
 
 class CUDAManager:
-    def __init__(self, known_arches, nvprune_exe):
+    def __init__(self, known_arches, nvprune_exe, prune):
         self.fatbin_libs = self._known_fatbin_libs(set(CUDA_LIBRARIES))
 
         self.prune_args = []
-        if known_arches:
+        if known_arches and prune:
             for arch in known_arches.split(':'):
                 self.prune_args.append('-gencode')
                 self.prune_args.append(self._arch_flag(arch))
@@ -77,12 +90,7 @@ class CUDAManager:
         return self.prune_args and self.nvprune_exe
 
     def _known_fatbin_libs(self, libs):
-        libs_wo_device_code = {
-            '-lcudart_static',
-            '-lcupti_static',
-            '-lnppc_static',
-        }
-        return set(libs) - libs_wo_device_code
+        return set(libs) - CUDA_NO_FATBIN_LIBRARIES
 
     def _arch_flag(self, arch):
         _, ver = arch.split('_', 1)
@@ -107,6 +115,9 @@ class CUDAManager:
             SECTIONS {
                 .nv_fatbin : { *(.nv_fatbin) }
                 .ldata : { *(.ldata) }
+                .lrodata : { *(.lrodata .lrodata.*) }
+                .cask_resource : { *(.cask_resource) }
+                __llvm_prf_names : { *(__llvm_prf_names) }
             } INSERT AFTER .bss
         """).strip()
 
@@ -195,13 +206,19 @@ def add_custom_linker_script(cmd, cuda_manager, build_root):
     return list(cmd) + [script_path]
 
 
-def fix_cmd_for_dynamic_cuda(cmd):
+def fix_cmd_for_dynamic_cuda(cmd, coverage_enabled):
     flags = []
     for flag in cmd:
         if flag in CUDA_LIBRARIES:
             flags.append(CUDA_LIBRARIES[flag])
         else:
             flags.append(flag)
+
+    if coverage_enabled:
+        # might get undefined symbol for libm symbols when coverage is enabled
+        # even though the program will be run with newer OS_SDK
+        flags.append('-Wl,--allow-shlib-undefined')
+
     return flags
 
 
@@ -230,7 +247,13 @@ if __name__ == '__main__':
     nv = kv['NVPRUNE']
     oc = kv['OBJCOPY']
 
-    cuda_manager = CUDAManager(ca, nv)
+    coverage_enabled = False
+    if 'CLANG_COVERAGE' in kv and kv['CLANG_COVERAGE'] == 'True':
+        coverage_enabled = True
+
+    prune = (kv.get('PRUNE', 'True') == 'True')
+
+    cuda_manager = CUDAManager(ca, nv, prune)
 
     try:
         br = get_flag('--build-root')
@@ -240,7 +263,7 @@ if __name__ == '__main__':
     cmd = add_custom_linker_script(cmd, cuda_manager, br)
 
     if '--dynamic-cuda' in cmd:
-        cmd = fix_cmd_for_dynamic_cuda(cmd)
+        cmd = fix_cmd_for_dynamic_cuda(cmd, coverage_enabled)
     else:
         cmd = process_cuda_libraries_by_nvprune(cmd, cuda_manager, br)
         cmd = process_cuda_libraries_by_objcopy(cmd, br, oc)

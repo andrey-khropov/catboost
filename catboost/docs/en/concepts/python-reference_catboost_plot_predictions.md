@@ -2,6 +2,8 @@
 
 {% include [plot_predictions-plot_predictions__desc__full](../_includes/work_src/reusage-python/plot_predictions__desc__full.md) %}
 
+{% include [plot_predictions-plot_predictions__call_format](../_includes/work_src/reusage-python/plot_predictions__call_format.md) %}
+
 ## {{ dl--parameters }} {#parameters}
 
 ### data
@@ -17,6 +19,7 @@ For example, use a two-document slice of the original dataset (refer to the exam
 - numpy.ndarray
 - pandas.DataFrame
 - {{ python_type__pandas-SparseDataFrame }}
+- [polars.DataFrame](https://docs.pola.rs/api/python/stable/reference/dataframe/index.html)
 - scipy.sparse.spmatrix (all subclasses except dia_matrix)
 - catboost.Pool
 

@@ -2,10 +2,12 @@ import collections
 import csv
 import json
 import os
+import pathlib
 import random
 import shutil
 import sys
-from pandas import read_csv, DataFrame
+from typing import Optional
+import pandas as pd
 from copy import deepcopy
 import numpy as np
 from catboost.utils import read_cd
@@ -31,16 +33,20 @@ __all__ = [
     'test_output_path',
     'compare_with_limited_precision',
     'is_canonical_test_run',
+    'git_repo_root_dir',
 ]
 
-try:
-    from yatest.common import binary_path, test_output_path
-except ImportError:
+
+git_repo_root_dir : Optional[str] = None
+
+if git_repo_root := next((p for p in pathlib.Path(__file__).parents if (p / '.git').exists()), None):
+    git_repo_root_dir = str(git_repo_root.absolute())
     sys.path += [
-        os.environ['CMAKE_SOURCE_DIR'],
-        os.path.join(os.environ['CMAKE_SOURCE_DIR'], 'library', 'python', 'testing', 'yatest_common')
+        git_repo_root_dir,
+        os.path.join(git_repo_root_dir, 'library', 'python', 'testing', 'yatest_common')
     ]
-    from yatest.common import binary_path, test_output_path
+
+from yatest.common import binary_path, test_output_path  # noqa: E402
 
 
 def remove_time_from_json(filename):
@@ -111,7 +117,7 @@ def generate_patients_datasets(train_path, test_path):
     samples = 237
 
     for samples, path in zip([237, 154], [train_path, test_path]):
-        data = DataFrame()
+        data = pd.DataFrame()
         data['age'] = np.random.randint(20, 71, size=samples)
         data['gender'] = np.where(np.random.binomial(1, 0.7, samples) == 1, 'male', 'female')
         data['diet'] = np.where(np.random.binomial(1, 0.1, samples) == 1, 'yes', 'no')
@@ -207,7 +213,7 @@ def generate_dataset_with_num_and_cat_features(
 
     labels = [random.choice(labels) for i in range(n_samples)]
 
-    return (DataFrame(feature_columns), labels)
+    return (pd.DataFrame(feature_columns), labels)
 
 
 def generate_survival_dataset(seed=20201015):
@@ -302,11 +308,11 @@ def compare_evals(fit_eval, calc_eval, skip_header=False):
 
 
 def compare_evals_with_precision(fit_eval, calc_eval, rtol=1e-6, atol=1e-8, skip_last_column_in_fit=True):
-    df_fit = read_csv(fit_eval, sep='\t')
+    df_fit = pd.read_csv(fit_eval, sep='\t')
     if skip_last_column_in_fit:
         df_fit = df_fit.iloc[:, :-1]
 
-    df_calc = read_csv(calc_eval, sep='\t')
+    df_calc = pd.read_csv(calc_eval, sep='\t')
 
     if np.any(df_fit.columns != df_calc.columns):
         sys.stderr.write('column sets differ: {}, {}'.format(df_fit.columns, df_calc.columns))
@@ -353,7 +359,7 @@ def load_dataset_as_dataframe(data_file, columns_metadata, has_header=False):
     if 'Label' not in columns_metadata['column_type_to_indices']:
         raise Exception('no target in dataset')
 
-    df = read_csv(
+    df = pd.read_csv(
         data_file,
         sep='\t',
         header=1 if has_header else None
@@ -370,7 +376,7 @@ def load_dataset_as_dataframe(data_file, columns_metadata, has_header=False):
     return result
 
 
-# returns (features DataFrame, cat_feature_indices)
+# returns (features pandas.DataFrame, cat_feature_indices)
 def load_pool_features_as_df(pool_file, cd_file):
     columns_metadata = read_cd(cd_file, data_file=pool_file, canonize_column_types=True)
     data = load_dataset_as_dataframe(pool_file, columns_metadata)
@@ -423,7 +429,7 @@ def get_limited_precision_numpy_diff_tool(rtol=None, atol=None):
     if diff_tool[0] is None:
         diff_tool = [
             'python',
-            os.path.join(os.environ['CMAKE_SOURCE_DIR'], 'catboost', 'tools', 'limited_precision_numpy_diff', 'main.py')
+            os.path.join(git_repo_root_dir, 'catboost', 'tools', 'limited_precision_numpy_diff', 'main.py')
         ]
 
     if rtol is not None:
