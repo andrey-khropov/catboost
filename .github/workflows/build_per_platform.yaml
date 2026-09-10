@@ -255,6 +255,8 @@ jobs:
       - name: Prepare CMake build cache
         shell: pwsh
         run: |
+          Set-PSDebug -Trace 1
+
           if (Test-Path cmake_build_cache) {
             if (Test-Path cmake_build_cache/git_commit_sha) {
               Set-Location -LiteralPath ${{ github.workspace }}/catboost
