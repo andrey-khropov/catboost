@@ -60,6 +60,7 @@ jobs:
           # pyenv builds cannot handle both openssl@1.1 and openssl@3.5 installed at the same time
           brew unlink openssl@1.1
           mv /usr/local/opt/openssl@1.1 /usr/local/opt/openssl@1.1.BAK
+          brew link openssl@3.5
 
           brew install pyenv
 
