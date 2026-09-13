@@ -156,7 +156,7 @@ jobs:
           cd $CMAKE_BUILD_ENV_ROOT/darwin-arm64
           mkdir -p Library/Java/JavaVirtualMachines/jdk-8/Contents
           cd Library/Java/JavaVirtualMachines/jdk-8/Contents
-          ln -s $JAVA_HOME_8_ARM64 ./Home
+          ln -s $JAVA_HOME_8_AARCH64 ./Home
 
           # Python
           cd $CMAKE_BUILD_ENV_ROOT/darwin-arm64
