@@ -3,7 +3,7 @@ name: Check build and tests
 on:
   push:
     branches:
-      - master
+      - tests_debug
 
   pull_request:
 
