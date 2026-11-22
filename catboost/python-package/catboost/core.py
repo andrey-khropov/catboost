@@ -1115,6 +1115,7 @@ class Pool(_PoolBase):
     def _check_transform_tags(self, tags, feature_names):
         if not isinstance(tags, dict):
             raise CatBoostError("Invalid feature_tags type={}: must be dict like.".format(type(tags)))
+        tags = deepcopy(tags)
         for tag_name, tag_features in tags.items():
             if not isinstance(tag_features, dict):
                 raise CatBoostError("Invalid type of value in feature_tags by key {}, value type is {}: must be dict like.".format(tag_name, type(tag_features)))
@@ -1568,7 +1569,7 @@ def _build_train_pool(X, y, cat_features, text_features, embedding_features, pai
         train_pool = Pool(data=X, pairs=pairs, graph=graph, column_description=column_description)
     else:
         if y is None:
-            raise CatBoostError("y has not initialized in fit(): X is not catboost.Pool object, y must be not None in fit().")
+            raise CatBoostError("y has not been initialized in fit(): X is not catboost.Pool object, y must be not None in fit().")
         train_pool = Pool(X, y, cat_features=cat_features, text_features=text_features, embedding_features=embedding_features, pairs=pairs, graph=graph, weight=sample_weight, group_id=group_id,
                           group_weight=group_weight, subgroup_id=subgroup_id, pairs_weight=pairs_weight, baseline=baseline)
     return train_pool
@@ -1835,6 +1836,11 @@ class _CatBoostBase(object):
         if '__model' in state:
             self._load_from_blob(state['__model'])
             del state['__model']
+            # `_load_from_blob` now refreshes `_init_params` from the model, but
+            # pickle round-trips must restore the exact init params captured by
+            # `__getstate__` (which are still in `state` below) — not the
+            # model-derived defaults.
+            self._init_params = {}
         if '_test_eval' in state:
             self._set_test_evals([state['_test_eval']])
             del state['_test_eval']
@@ -2014,12 +2020,9 @@ class _CatBoostBase(object):
     def _load_model(self, model_file, format):
         if not isinstance(model_file, PATH_TYPES):
             raise CatBoostError("Invalid fname type={}: must be str or os.PathLike.".format(type(model_file)))
-        self._init_params = {}
         self._object._load_model(model_file, format)
         self._set_trained_model_attributes()
-        for key, value in iteritems(self._get_params_from_model_updated_with_init_params()):
-            self._init_params[key] = value
-        self._canonized_params = None
+        self._refresh_params_from_model()
 
     def _serialize_model(self):
         return self._object._serialize_model()
@@ -2031,10 +2034,18 @@ class _CatBoostBase(object):
     def _load_from_blob(self, blob):
         self._deserialize_model(blob)
         self._set_trained_model_attributes()
+        self._refresh_params_from_model()
 
     def _load_from_stream(self, stream):
         self._object._load_from_stream(stream)
         self._set_trained_model_attributes()
+        self._refresh_params_from_model()
+
+    def _refresh_params_from_model(self):
+        self._init_params = {}
+        for key, value in iteritems(self._get_params_from_model_updated_with_init_params()):
+            self._init_params[key] = value
+        self._canonized_params = None
 
     def _sum_models(self, models_base, weights=None, ctr_merge_policy='IntersectingCountersAverage'):
         if weights is None:
@@ -2948,7 +2959,19 @@ class CatBoost(_CatBoostBase):
             If this parameter is a string or os.PathLike, load initial model from the path specified by this string.
 
         callbacks : list, optional (default=None)
-            List of callback objects that are applied at end of each iteration.
+            List of callback objects that are invoked at the end of each iteration.
+            Each callback must implement the `after_iteration(self, info)` method, where `info` has attributes:
+                iteration : int
+                    Number of completed iterations (starts from 1).
+                metrics : dict
+                    Metric values for all completed iterations, in the same format as `get_evals_result()`:
+                    {'learn': {metric_name: [values]}, 'validation': {metric_name: [values]}}.
+                    If several evaluation datasets are passed in `eval_set`, their keys are
+                    'validation_0', 'validation_1', ... instead of 'validation'.
+                    If no evaluation datasets are passed, there are no validation keys, only 'learn'.
+            The method must return True to continue training or False to stop it.
+            Callbacks are invoked in the listed order; the callbacks after the one that returned False are skipped.
+            Supported only for training on CPU.
 
         log_cout: output stream or callback for logging (default=None)
             If None is specified, sys.stdout is used
@@ -3796,6 +3819,7 @@ class CatBoost(_CatBoostBase):
                 * pmml_model_version : string
         pool : catboost.Pool or list or numpy.ndarray or pandas.DataFrame or pandas.Series or polars.DataFrame or catboost.FeaturesData
             Training dataset.
+            Required if the model contains categorical features and the format is 'cpp', 'python', 'json' or 'onnx'.
         """
         if not self.is_fitted():
             raise CatBoostError("There is no trained model to use save_model(). Use fit() to train model. Then use this method.")
@@ -5597,7 +5621,19 @@ class CatBoostClassifier(CatBoost):
             If this parameter is a string or os.PathLike, load initial model from the path specified by this string.
 
         callbacks : list, optional (default=None)
-            List of callback objects that are applied at end of each iteration.
+            List of callback objects that are invoked at the end of each iteration.
+            Each callback must implement the `after_iteration(self, info)` method, where `info` has attributes:
+                iteration : int
+                    Number of completed iterations (starts from 1).
+                metrics : dict
+                    Metric values for all completed iterations, in the same format as `get_evals_result()`:
+                    {'learn': {metric_name: [values]}, 'validation': {metric_name: [values]}}.
+                    If several evaluation datasets are passed in `eval_set`, their keys are
+                    'validation_0', 'validation_1', ... instead of 'validation'.
+                    If no evaluation datasets are passed, there are no validation keys, only 'learn'.
+            The method must return True to continue training or False to stop it.
+            Callbacks are invoked in the listed order; the callbacks after the one that returned False are skipped.
+            Supported only for training on CPU.
 
         log_cout: output stream or callback for logging (default=None)
             If None is specified, sys.stdout is used
@@ -5924,7 +5960,7 @@ class CatBoostClassifier(CatBoost):
                 raise CatBoostError("Wrong initializing y: X is catboost.Pool object, y must be initialized inside catboost.Pool.")
             y = X.get_label()
             if y is None:
-                raise CatBoostError("Label in X has not initialized.")
+                raise CatBoostError("Label in X has not been initialized.")
         if isinstance(y, pd.DataFrame):
             if len(y.columns) != 1:
                 raise CatBoostError("y is pandas.DataFrame and has {} columns, but must have exactly one.".format(len(y.columns)))
@@ -5936,6 +5972,8 @@ class CatBoostClassifier(CatBoost):
         elif y is None:
             raise CatBoostError("y should be specified.")
         y = np.array(y)
+        if y.ndim == 2 and y.shape[1] == 1:
+            y = y.reshape(-1)
         predicted_classes = self._predict(
             X,
             prediction_type='Class',
@@ -6231,7 +6269,19 @@ class CatBoostRegressor(CatBoost):
             If this parameter is a string or os.PathLike, load initial model from the path specified by this string.
 
         callbacks : list, optional (default=None)
-            List of callback objects that are applied at end of each iteration.
+            List of callback objects that are invoked at the end of each iteration.
+            Each callback must implement the `after_iteration(self, info)` method, where `info` has attributes:
+                iteration : int
+                    Number of completed iterations (starts from 1).
+                metrics : dict
+                    Metric values for all completed iterations, in the same format as `get_evals_result()`:
+                    {'learn': {metric_name: [values]}, 'validation': {metric_name: [values]}}.
+                    If several evaluation datasets are passed in `eval_set`, their keys are
+                    'validation_0', 'validation_1', ... instead of 'validation'.
+                    If no evaluation datasets are passed, there are no validation keys, only 'learn'.
+            The method must return True to continue training or False to stop it.
+            Callbacks are invoked in the listed order; the callbacks after the one that returned False are skipped.
+            Supported only for training on CPU.
 
         log_cout: output stream or callback for logging (default=None)
             If None is specified, sys.stdout is used
@@ -6358,7 +6408,7 @@ class CatBoostRegressor(CatBoost):
                 raise CatBoostError("Wrong initializing y: X is catboost.Pool object, y must be initialized inside catboost.Pool.")
             y = X.get_label()
             if y is None:
-                raise CatBoostError("Label in X has not initialized.")
+                raise CatBoostError("Label in X has not been initialized.")
         elif y is None:
             raise CatBoostError("y should be specified.")
         y = np.array(y, dtype=np.float64)
@@ -6641,7 +6691,19 @@ class CatBoostRanker(CatBoost):
             Continue training starting from the existing model.
             If this parameter is a string or os.PathLike, load initial model from the path specified by this string.
         callbacks : list, optional (default=None)
-            List of callback objects that are applied at end of each iteration.
+            List of callback objects that are invoked at the end of each iteration.
+            Each callback must implement the `after_iteration(self, info)` method, where `info` has attributes:
+                iteration : int
+                    Number of completed iterations (starts from 1).
+                metrics : dict
+                    Metric values for all completed iterations, in the same format as `get_evals_result()`:
+                    {'learn': {metric_name: [values]}, 'validation': {metric_name: [values]}}.
+                    If several evaluation datasets are passed in `eval_set`, their keys are
+                    'validation_0', 'validation_1', ... instead of 'validation'.
+                    If no evaluation datasets are passed, there are no validation keys, only 'learn'.
+            The method must return True to continue training or False to stop it.
+            Callbacks are invoked in the listed order; the callbacks after the one that returned False are skipped.
+            Supported only for training on CPU.
 
         log_cout: output stream or callback for logging (default=None)
             If None is specified, sys.stdout is used
@@ -7056,7 +7118,7 @@ def sample_gaussian_process(X, y, eval_set=None,
             for tree in prior_json["oblivious_trees"]:
                 for ind, (val, weight) in enumerate(zip(tree["leaf_values"], tree["leaf_weights"])):
                     tree["leaf_values"][ind] = random_generator.normal(scale=np.sqrt(N / np.sqrt(max(1, weight))))
-            with open(prior_model_tmp_file, "w") as prior_file:
+            with open(prior_model_tmp_file, "w", encoding='utf-8') as prior_file:
                 json.dump(prior_json, prior_file)
             prior.load_model(prior_model_tmp_file, format="json")
 

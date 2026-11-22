@@ -599,7 +599,8 @@ cdef extern from "catboost/libs/model/model_export/model_exporter.h" namespace "
 
     cdef TString ConvertTreeToOnnxProto(
         const TFullModel& model,
-        const TString& userParametersJson) except +ProcessException nogil
+        const TString& userParametersJson,
+        const THashMap[ui32, TString]* catFeaturesHashToString) except +ProcessException nogil
 
 cdef extern from "catboost/libs/model/utils.h":
     cdef TJsonValue GetPlainJsonWithAllOptions(const TFullModel& model) except +ProcessException nogil
@@ -1931,7 +1932,7 @@ cdef TCustomMetricDescriptor _BuildCustomMetricDescriptor(object metricObject) e
     descriptor.GetFinalErrorFunc = &_MetricGetFinalError
     return descriptor
 
-cdef TCustomCallbackDescriptor _BuildCustomCallbackDescritor(object callbackObject) except *:
+cdef TCustomCallbackDescriptor _BuildCustomCallbackDescriptor(object callbackObject) except *:
     cdef TCustomCallbackDescriptor descriptor
     descriptor.CustomData = <void*>callbackObject
     descriptor.AfterIterationFunc = &_CallbackAfterIteration
@@ -2080,7 +2081,7 @@ cdef class _PreprocessParams:
                     "Custom eval metric should not be inherited from MultiTargetCustomMetric for single-target objective"
 
         if params_to_json.get("callbacks") == "PythonUserDefinedPerObject":
-            self.customCallbackDescriptor = _BuildCustomCallbackDescritor(params["callbacks"])
+            self.customCallbackDescriptor = _BuildCustomCallbackDescriptor(params["callbacks"])
 
         dumps_params = dumps(params_to_json, cls=_NumpyAwareEncoder)
 
@@ -7172,14 +7173,19 @@ cpdef compute_training_options(dict options, DataMetaInfo train_meta_info, DataM
     return json_value_to_dict(trainingOptions)
 
 
-cpdef _get_onnx_model(model, export_parameters):
+cpdef _get_onnx_model(model, export_parameters, _PoolBase pool=None):
     if not model._is_oblivious():
         raise CatBoostError(
             "ONNX-ML export is available only for models on oblivious trees ")
 
+    cdef THashMap[ui32, TString] cat_features_hash_to_string
+    if pool:
+        cat_features_hash_to_string = MergeCatFeaturesHashToString(pool.__pool.Get()[0].ObjectsData.Get()[0])
+
     cdef TString result = ConvertTreeToOnnxProto(
         dereference((<_CatBoost>model).__model),
         to_arcadia_string(export_parameters),
+        &cat_features_hash_to_string if pool else <THashMap[ui32, TString]*>nullptr,
     )
     cdef const char* result_ptr = result.c_str()
     cdef size_t result_len = result.size()

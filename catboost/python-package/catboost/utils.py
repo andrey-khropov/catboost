@@ -696,19 +696,7 @@ def quantize(
         dev_max_subset_size_for_build_borders
     )
 
-    pool = Pool(
-        data_path,
-        column_description=column_description,
-        pairs=pairs,
-        graph=graph,
-        feature_names=feature_names,
-        delimiter=delimiter,
-        has_header=has_header,
-        ignore_csv_quoting=ignore_csv_quoting,
-        thread_count=thread_count,
-        log_cout=log_cout,
-        log_cerr=log_cerr
-    )
+    pool = Pool(None, data_can_be_none=True)
     pool._read(
         data_path,
         column_description,
@@ -727,10 +715,9 @@ def quantize(
     return pool
 
 
-def convert_to_onnx_object(model, export_parameters=None, **kwargs):
+def convert_to_onnx_object(model, export_parameters=None, data=None, **kwargs):
     """
     Convert given CatBoost model to ONNX-ML model.
-    Categorical Features are not supported.
 
     Parameters
     ----------
@@ -745,6 +732,9 @@ def convert_to_onnx_object(model, export_parameters=None, **kwargs):
                 The model_version component of onnx Model
             * onnx_doc_string : string
                 The doc_string component of onnx Model
+    data : catboost.Pool [default=None]
+        Pool object containing categorical features hash to string mapping.
+        Required for models with categorical features.
     Returns
     -------
     onnx_object : ModelProto
@@ -771,7 +761,7 @@ def convert_to_onnx_object(model, export_parameters=None, **kwargs):
     if export_parameters:
         params_string = json.dumps(export_parameters, cls=_NumpyAwareEncoder)
 
-    model_str = _get_onnx_model(model._object, params_string)
+    model_str = _get_onnx_model(model._object, params_string, data)
     onnx_model = onnx.load_model_from_string(model_str)
     return onnx_model
 
