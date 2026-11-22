@@ -181,6 +181,7 @@ jobs:
           mkdir -p Python
           cd Python
           unzip ${{ github.workspace }}/python_versions_macos_x86_64
+          ls -lR
 
       - if: inputs.os == 'windows'
         name: Install CUDA on Windows
