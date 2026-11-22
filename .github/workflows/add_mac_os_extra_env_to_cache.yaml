@@ -9,8 +9,6 @@ on:
 
 jobs:
   add_macos_arm64_extra_env_to_cache:
-    # disable as it is not needed when CI in run on Arm64 hosts but don't delete it outright just yet
-    if: false
     name: Add MacOS Arm64 extra env to cache
     runs-on: macos-15
     steps:
@@ -30,13 +28,15 @@ jobs:
           cd $HOME/.pyenv/versions/ && ln -s 3.13.1 ./3.13
           pyenv install 3.14.0
           cd $HOME/.pyenv/versions/ && ln -s 3.14.0 ./3.14
+          pyenv install 3.15.2
+          cd $HOME/.pyenv/versions/ && ln -s 3.15.2 ./3.15
 
           export PYENV_ROOT="$HOME/.pyenv"
           command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
           eval "$(pyenv init --path)"
           eval "$(pyenv init -)"
 
-          for PY_VER in 3.9 3.10 3.11 3.12 3.13 3.14
+          for PY_VER in 3.9 3.10 3.11 3.12 3.13 3.14 3.15
           do
               pyenv shell $PY_VER
               python -m pip install -U pip numpy
@@ -84,13 +84,15 @@ jobs:
           cd $HOME/.pyenv/versions/ && ln -s 3.13.1 ./3.13
           pyenv install 3.14.0
           cd $HOME/.pyenv/versions/ && ln -s 3.14.0 ./3.14
+          pyenv install 3.15.2
+          cd $HOME/.pyenv/versions/ && ln -s 3.15.2 ./3.15
 
           export PYENV_ROOT="$HOME/.pyenv"
           command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
           eval "$(pyenv init --path)"
           eval "$(pyenv init -)"
 
-          for PY_VER in 3.9 3.10 3.11 3.12 3.13 3.14
+          for PY_VER in 3.9 3.10 3.11 3.12 3.13 3.14 3.15
           do
               pyenv shell $PY_VER
               python -m pip install -U pip numpy
