@@ -9,7 +9,6 @@ on:
 
 jobs:
   add_macos_arm64_extra_env_to_cache:
-    if: false
     name: Add MacOS Arm64 extra env to cache
     runs-on: macos-15
     steps:
@@ -23,7 +22,7 @@ jobs:
               uv python install $PY_VER
               uv pip install --system --break-system-packages --python "$(uv python find "$PY_VER")" -U pip numpy
               cd $HOME/.local/share/uv/python
-              ln -s cpython-$PY_VER-macos-aarch64-none $PY_VER
+              ln -s cpython-$PY_VER.* $PY_VER
           done
 
           cd $HOME/.local/share/uv/python/ && zip -r -y ${{ github.workspace }}/python_versions_macos_arm64.zip *
@@ -49,7 +48,7 @@ jobs:
               uv python install $PY_VER
               uv pip install --system --break-system-packages --python "$(uv python find "$PY_VER")" -U pip numpy
               cd $HOME/.local/share/uv/python
-              ln -s cpython-$PY_VER-macos-x86_64-none $PY_VER
+              ln -s cpython-$PY_VER.* $PY_VER
           done
 
           cd $HOME/.local/share/uv/python/ && zip -r -y ${{ github.workspace }}/python_versions_macos_x86_64.zip *
