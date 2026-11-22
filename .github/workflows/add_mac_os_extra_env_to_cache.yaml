@@ -9,6 +9,7 @@ on:
 
 jobs:
   add_macos_arm64_extra_env_to_cache:
+    if: false
     name: Add MacOS Arm64 extra env to cache
     runs-on: macos-15
     steps:
@@ -52,8 +53,6 @@ jobs:
           done
 
           cd $HOME/.local/share/uv/python/ && zip -r -y ${{ github.workspace }}/python_versions_macos_x86_64.zip *
-
-          cd $HOME/.pyenv/versions/ && zip -r -y ${{ github.workspace }}/python_versions_macos_x86_64.zip *
 
       - name: Save to cache
         uses: actions/cache/save@v6
